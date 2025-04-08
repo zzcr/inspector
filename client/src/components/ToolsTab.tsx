@@ -1,4 +1,4 @@
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import {
   ListToolsResult,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
-import { AlertCircle, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { useEffect, useState } from "react";
 import ListPane from "./ListPane";
 import JsonView from "./JsonView";
@@ -27,7 +27,6 @@ const ToolsTab = ({
   setSelectedTool,
   toolResult,
   nextCursor,
-  error,
 }: {
   tools: Tool[];
   listTools: () => void;
@@ -53,14 +52,10 @@ const ToolsTab = ({
         return (
           <>
             <h4 className="font-semibold mb-2">Invalid Tool Result:</h4>
-            <div className="p-4 border rounded">
-              <JsonView data={toolResult} />
-            </div>
+            <JsonView data={toolResult} />
             <h4 className="font-semibold mb-2">Errors:</h4>
             {parsedResult.error.errors.map((error, idx) => (
-              <div key={idx} className="p-4 border rounded">
-                <JsonView data={error} />
-              </div>
+              <JsonView data={error} key={idx} />
             ))}
           </>
         );
@@ -75,11 +70,7 @@ const ToolsTab = ({
           </h4>
           {structuredResult.content.map((item, index) => (
             <div key={index} className="mb-2">
-              {item.type === "text" && (
-                <div className="p-4 border rounded">
-                  <JsonView data={item.text} />
-                </div>
-              )}
+              {item.type === "text" && <JsonView data={item.text} />}
               {item.type === "image" && (
                 <img
                   src={`data:${item.mimeType};base64,${item.data}`}
@@ -97,9 +88,7 @@ const ToolsTab = ({
                     <p>Your browser does not support audio playback</p>
                   </audio>
                 ) : (
-                  <div className="p-4 border rounded">
-                    <JsonView data={item.resource} />
-                  </div>
+                  <JsonView data={item.resource} />
                 ))}
             </div>
           ))}
@@ -109,9 +98,8 @@ const ToolsTab = ({
       return (
         <>
           <h4 className="font-semibold mb-2">Tool Result (Legacy):</h4>
-          <div className="p-4 border rounded">
-            <JsonView data={toolResult.toolResult} />
-          </div>
+
+          <JsonView data={toolResult.toolResult} />
         </>
       );
     }
@@ -147,13 +135,7 @@ const ToolsTab = ({
           </h3>
         </div>
         <div className="p-4">
-          {error ? (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          ) : selectedTool ? (
+          {selectedTool ? (
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
                 {selectedTool.description}
@@ -226,7 +208,11 @@ const ToolsTab = ({
                         </div>
                       ) : (
                         <Input
-                          type={prop.type === "number" ? "number" : "text"}
+                          type={
+                            prop.type === "number" || prop.type === "integer"
+                              ? "number"
+                              : "text"
+                          }
                           id={key}
                           name={key}
                           placeholder={prop.description}
@@ -235,7 +221,8 @@ const ToolsTab = ({
                             setParams({
                               ...params,
                               [key]:
-                                prop.type === "number"
+                                prop.type === "number" ||
+                                prop.type === "integer"
                                   ? Number(e.target.value)
                                   : e.target.value,
                             })

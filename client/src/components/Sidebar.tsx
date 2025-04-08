@@ -10,6 +10,8 @@ import {
   EyeOff,
   RotateCcw,
   Settings,
+  HelpCircle,
+  RefreshCwOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,12 +28,17 @@ import {
   LoggingLevelSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { InspectorConfig } from "@/lib/configurationTypes";
-
+import { ConnectionStatus } from "@/lib/constants";
 import useTheme from "../lib/useTheme";
 import { version } from "../../../package.json";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 interface SidebarProps {
-  connectionStatus: "disconnected" | "connected" | "error";
+  connectionStatus: ConnectionStatus;
   transportType: "stdio" | "sse";
   setTransportType: (type: "stdio" | "sse") => void;
   command: string;
@@ -45,6 +52,7 @@ interface SidebarProps {
   bearerToken: string;
   setBearerToken: (token: string) => void;
   onConnect: () => void;
+  onDisconnect: () => void;
   stdErrNotifications: StdErrNotification[];
   logLevel: LoggingLevel;
   sendLogLevelRequest: (level: LoggingLevel) => void;
@@ -68,6 +76,7 @@ const Sidebar = ({
   bearerToken,
   setBearerToken,
   onConnect,
+  onDisconnect,
   stdErrNotifications,
   logLevel,
   sendLogLevelRequest,
@@ -177,6 +186,7 @@ const Sidebar = ({
                 variant="outline"
                 onClick={() => setShowEnvVars(!showEnvVars)}
                 className="flex items-center w-full"
+                data-testid="env-vars-button"
               >
                 {showEnvVars ? (
                   <ChevronDown className="w-4 h-4 mr-2" />
@@ -298,6 +308,7 @@ const Sidebar = ({
               variant="outline"
               onClick={() => setShowConfig(!showConfig)}
               className="flex items-center w-full"
+              data-testid="config-button"
             >
               {showConfig ? (
                 <ChevronDown className="w-4 h-4 mr-2" />
@@ -313,9 +324,19 @@ const Sidebar = ({
                   const configKey = key as keyof InspectorConfig;
                   return (
                     <div key={key} className="space-y-2">
-                      <label className="text-sm font-medium">
-                        {configItem.description}
-                      </label>
+                      <div className="flex items-center gap-1">
+                        <label className="text-sm font-medium text-green-600">
+                          {configKey}
+                        </label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {configItem.description}
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                       {typeof configItem.value === "number" ? (
                         <Input
                           type="number"
@@ -375,36 +396,53 @@ const Sidebar = ({
           </div>
 
           <div className="space-y-2">
-            <Button className="w-full" onClick={onConnect}>
-              {connectionStatus === "connected" ? (
-                <>
+            {connectionStatus === "connected" && (
+              <div className="grid grid-cols-2 gap-4">
+                <Button data-testid="connect-button" onClick={onConnect}>
                   <RotateCcw className="w-4 h-4 mr-2" />
                   {transportType === "stdio" ? "Restart" : "Reconnect"}
-                </>
-              ) : (
-                <>
-                  <Play className="w-4 h-4 mr-2" />
-                  Connect
-                </>
-              )}
-            </Button>
+                </Button>
+                <Button onClick={onDisconnect}>
+                  <RefreshCwOff className="w-4 h-4 mr-2" />
+                  Disconnect
+                </Button>
+              </div>
+            )}
+            {connectionStatus !== "connected" && (
+              <Button className="w-full" onClick={onConnect}>
+                <Play className="w-4 h-4 mr-2" />
+                Connect
+              </Button>
+            )}
 
             <div className="flex items-center justify-center space-x-2 mb-4">
               <div
-                className={`w-2 h-2 rounded-full ${
-                  connectionStatus === "connected"
-                    ? "bg-green-500"
-                    : connectionStatus === "error"
-                      ? "bg-red-500"
-                      : "bg-gray-500"
-                }`}
+                className={`w-2 h-2 rounded-full ${(() => {
+                  switch (connectionStatus) {
+                    case "connected":
+                      return "bg-green-500";
+                    case "error":
+                      return "bg-red-500";
+                    case "error-connecting-to-proxy":
+                      return "bg-red-500";
+                    default:
+                      return "bg-gray-500";
+                  }
+                })()}`}
               />
               <span className="text-sm text-gray-600">
-                {connectionStatus === "connected"
-                  ? "Connected"
-                  : connectionStatus === "error"
-                    ? "Connection Error"
-                    : "Disconnected"}
+                {(() => {
+                  switch (connectionStatus) {
+                    case "connected":
+                      return "Connected";
+                    case "error":
+                      return "Connection Error, is your MCP server running?";
+                    case "error-connecting-to-proxy":
+                      return "Error Connecting to MCP Inspector Proxy - Check Console logs";
+                    default:
+                      return "Disconnected";
+                  }
+                })()}
               </span>
             </div>
 

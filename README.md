@@ -2,7 +2,7 @@
 
 The MCP inspector is a developer tool for testing and debugging MCP servers.
 
-![MCP Inspector Screenshot](mcp-inspector.png)
+![MCP Inspector Screenshot](https://raw.githubusercontent.com/modelcontextprotocol/inspector/main/mcp-inspector.png)
 
 ## Running the Inspector
 
@@ -53,6 +53,7 @@ The MCP Inspector supports the following configuration settings. To change them 
 | Name                       | Purpose                                                                                   | Default Value |
 | -------------------------- | ----------------------------------------------------------------------------------------- | ------------- |
 | MCP_SERVER_REQUEST_TIMEOUT | Maximum time in milliseconds to wait for a response from the MCP server before timing out | 10000         |
+| MCP_PROXY_FULL_ADDRESS     | The full URL of the MCP Inspector proxy server (e.g. `http://10.2.1.14:2277`)             | `null`        |
 
 ### From this repository
 
