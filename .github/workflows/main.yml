@@ -67,7 +67,9 @@ jobs:
     environment: release
     needs: build
     permissions:
-      contents: write
+      contents: read
+      packages: write
+      attestations: write
       id-token: write
     steps:
       - uses: actions/checkout@v4
