@@ -17,7 +17,13 @@ import {
   Tool,
   LoggingLevel,
 } from "@modelcontextprotocol/sdk/types.js";
-import React, { Suspense, useEffect, useRef, useState } from "react";
+import React, {
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useConnection } from "./lib/hooks/useConnection";
 import { useDraggablePane } from "./lib/hooks/useDraggablePane";
 import { StdErrNotification } from "./lib/notificationTypes";
@@ -45,18 +51,11 @@ import Sidebar from "./components/Sidebar";
 import ToolsTab from "./components/ToolsTab";
 import { DEFAULT_INSPECTOR_CONFIG } from "./lib/constants";
 import { InspectorConfig } from "./lib/configurationTypes";
-import {
-  getMCPProxyAddress,
-  getMCPServerRequestTimeout,
-} from "./utils/configUtils";
-import { useToast } from "@/hooks/use-toast";
+import { getMCPProxyAddress } from "./utils/configUtils";
 
-const params = new URLSearchParams(window.location.search);
 const CONFIG_LOCAL_STORAGE_KEY = "inspectorConfig_v1";
 
 const App = () => {
-  const { toast } = useToast();
-  // Handle OAuth callback route
   const [resources, setResources] = useState<Resource[]>([]);
   const [resourceTemplates, setResourceTemplates] = useState<
     ResourceTemplate[]
@@ -82,9 +81,14 @@ const App = () => {
   const [sseUrl, setSseUrl] = useState<string>(() => {
     return localStorage.getItem("lastSseUrl") || "http://localhost:3001/sse";
   });
-  const [transportType, setTransportType] = useState<"stdio" | "sse">(() => {
+  const [transportType, setTransportType] = useState<
+    "stdio" | "sse" | "streamable-http"
+  >(() => {
     return (
-      (localStorage.getItem("lastTransportType") as "stdio" | "sse") || "stdio"
+      (localStorage.getItem("lastTransportType") as
+        | "stdio"
+        | "sse"
+        | "streamable-http") || "stdio"
     );
   });
   const [logLevel, setLogLevel] = useState<LoggingLevel>("debug");
@@ -98,15 +102,30 @@ const App = () => {
   const [config, setConfig] = useState<InspectorConfig>(() => {
     const savedConfig = localStorage.getItem(CONFIG_LOCAL_STORAGE_KEY);
     if (savedConfig) {
-      return {
+      // merge default config with saved config
+      const mergedConfig = {
         ...DEFAULT_INSPECTOR_CONFIG,
         ...JSON.parse(savedConfig),
       } as InspectorConfig;
+
+      // update description of keys to match the new description (in case of any updates to the default config description)
+      Object.entries(mergedConfig).forEach(([key, value]) => {
+        mergedConfig[key as keyof InspectorConfig] = {
+          ...value,
+          label: DEFAULT_INSPECTOR_CONFIG[key as keyof InspectorConfig].label,
+        };
+      });
+
+      return mergedConfig;
     }
     return DEFAULT_INSPECTOR_CONFIG;
   });
   const [bearerToken, setBearerToken] = useState<string>(() => {
     return localStorage.getItem("lastBearerToken") || "";
+  });
+
+  const [headerName, setHeaderName] = useState<string>(() => {
+    return localStorage.getItem("lastHeaderName") || "";
   });
 
   const [pendingSampleRequests, setPendingSampleRequests] = useState<
@@ -148,7 +167,7 @@ const App = () => {
     serverCapabilities,
     mcpClient,
     requestHistory,
-    makeRequest: makeConnectionRequest,
+    makeRequest,
     sendNotification,
     handleCompletion,
     completionsSupported,
@@ -161,8 +180,8 @@ const App = () => {
     sseUrl,
     env,
     bearerToken,
-    proxyServerUrl: getMCPProxyAddress(config),
-    requestTimeout: getMCPServerRequestTimeout(config),
+    headerName,
+    config,
     onNotification: (notification) => {
       setNotifications((prev) => [...prev, notification as ServerNotification]);
     },
@@ -202,34 +221,22 @@ const App = () => {
   }, [bearerToken]);
 
   useEffect(() => {
+    localStorage.setItem("lastHeaderName", headerName);
+  }, [headerName]);
+
+  useEffect(() => {
     localStorage.setItem(CONFIG_LOCAL_STORAGE_KEY, JSON.stringify(config));
   }, [config]);
 
-  const hasProcessedRef = useRef(false);
-  // Auto-connect if serverUrl is provided in URL params (e.g. after OAuth callback)
-  useEffect(() => {
-    if (hasProcessedRef.current) {
-      // Only try to connect once
-      return;
-    }
-    const serverUrl = params.get("serverUrl");
-    if (serverUrl) {
+  // Auto-connect to previously saved serverURL after OAuth callback
+  const onOAuthConnect = useCallback(
+    (serverUrl: string) => {
       setSseUrl(serverUrl);
       setTransportType("sse");
-      // Remove serverUrl from URL without reloading the page
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.delete("serverUrl");
-      window.history.replaceState({}, "", newUrl.toString());
-      // Show success toast for OAuth
-      toast({
-        title: "Success",
-        description: "Successfully authenticated with OAuth",
-      });
-      hasProcessedRef.current = true;
-      // Connect to the server
-      connectMcpServer();
-    }
-  }, [connectMcpServer, toast]);
+      void connectMcpServer();
+    },
+    [connectMcpServer],
+  );
 
   useEffect(() => {
     fetch(`${getMCPProxyAddress(config)}/config`)
@@ -279,13 +286,13 @@ const App = () => {
     setErrors((prev) => ({ ...prev, [tabKey]: null }));
   };
 
-  const makeRequest = async <T extends z.ZodType>(
+  const sendMCPRequest = async <T extends z.ZodType>(
     request: ClientRequest,
     schema: T,
     tabKey?: keyof typeof errors,
   ) => {
     try {
-      const response = await makeConnectionRequest(request, schema);
+      const response = await makeRequest(request, schema);
       if (tabKey !== undefined) {
         clearError(tabKey);
       }
@@ -303,7 +310,7 @@ const App = () => {
   };
 
   const listResources = async () => {
-    const response = await makeRequest(
+    const response = await sendMCPRequest(
       {
         method: "resources/list" as const,
         params: nextResourceCursor ? { cursor: nextResourceCursor } : {},
@@ -316,7 +323,7 @@ const App = () => {
   };
 
   const listResourceTemplates = async () => {
-    const response = await makeRequest(
+    const response = await sendMCPRequest(
       {
         method: "resources/templates/list" as const,
         params: nextResourceTemplateCursor
@@ -333,7 +340,7 @@ const App = () => {
   };
 
   const readResource = async (uri: string) => {
-    const response = await makeRequest(
+    const response = await sendMCPRequest(
       {
         method: "resources/read" as const,
         params: { uri },
@@ -346,7 +353,7 @@ const App = () => {
 
   const subscribeToResource = async (uri: string) => {
     if (!resourceSubscriptions.has(uri)) {
-      await makeRequest(
+      await sendMCPRequest(
         {
           method: "resources/subscribe" as const,
           params: { uri },
@@ -362,7 +369,7 @@ const App = () => {
 
   const unsubscribeFromResource = async (uri: string) => {
     if (resourceSubscriptions.has(uri)) {
-      await makeRequest(
+      await sendMCPRequest(
         {
           method: "resources/unsubscribe" as const,
           params: { uri },
@@ -377,7 +384,7 @@ const App = () => {
   };
 
   const listPrompts = async () => {
-    const response = await makeRequest(
+    const response = await sendMCPRequest(
       {
         method: "prompts/list" as const,
         params: nextPromptCursor ? { cursor: nextPromptCursor } : {},
@@ -390,7 +397,7 @@ const App = () => {
   };
 
   const getPrompt = async (name: string, args: Record<string, string> = {}) => {
-    const response = await makeRequest(
+    const response = await sendMCPRequest(
       {
         method: "prompts/get" as const,
         params: { name, arguments: args },
@@ -402,7 +409,7 @@ const App = () => {
   };
 
   const listTools = async () => {
-    const response = await makeRequest(
+    const response = await sendMCPRequest(
       {
         method: "tools/list" as const,
         params: nextToolCursor ? { cursor: nextToolCursor } : {},
@@ -415,21 +422,34 @@ const App = () => {
   };
 
   const callTool = async (name: string, params: Record<string, unknown>) => {
-    const response = await makeRequest(
-      {
-        method: "tools/call" as const,
-        params: {
-          name,
-          arguments: params,
-          _meta: {
-            progressToken: progressTokenRef.current++,
+    try {
+      const response = await sendMCPRequest(
+        {
+          method: "tools/call" as const,
+          params: {
+            name,
+            arguments: params,
+            _meta: {
+              progressToken: progressTokenRef.current++,
+            },
           },
         },
-      },
-      CompatibilityCallToolResultSchema,
-      "tools",
-    );
-    setToolResult(response);
+        CompatibilityCallToolResultSchema,
+        "tools",
+      );
+      setToolResult(response);
+    } catch (e) {
+      const toolResult: CompatibilityCallToolResult = {
+        content: [
+          {
+            type: "text",
+            text: (e as Error).message ?? String(e),
+          },
+        ],
+        isError: true,
+      };
+      setToolResult(toolResult);
+    }
   };
 
   const handleRootsChange = async () => {
@@ -437,7 +457,7 @@ const App = () => {
   };
 
   const sendLogLevelRequest = async (level: LoggingLevel) => {
-    await makeRequest(
+    await sendMCPRequest(
       {
         method: "logging/setLevel" as const,
         params: { level },
@@ -447,13 +467,17 @@ const App = () => {
     setLogLevel(level);
   };
 
+  const clearStdErrNotifications = () => {
+    setStdErrNotifications([]);
+  };
+
   if (window.location.pathname === "/oauth/callback") {
     const OAuthCallback = React.lazy(
       () => import("./components/OAuthCallback"),
     );
     return (
       <Suspense fallback={<div>Loading...</div>}>
-        <OAuthCallback />
+        <OAuthCallback onConnect={onOAuthConnect} />
       </Suspense>
     );
   }
@@ -476,12 +500,15 @@ const App = () => {
         setConfig={setConfig}
         bearerToken={bearerToken}
         setBearerToken={setBearerToken}
+        headerName={headerName}
+        setHeaderName={setHeaderName}
         onConnect={connectMcpServer}
         onDisconnect={disconnectMcpServer}
         stdErrNotifications={stdErrNotifications}
         logLevel={logLevel}
         sendLogLevelRequest={sendLogLevelRequest}
         loggingSupported={!!serverCapabilities?.logging || false}
+        clearStdErrNotifications={clearStdErrNotifications}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 overflow-auto">
@@ -637,9 +664,10 @@ const App = () => {
                         setTools([]);
                         setNextToolCursor(undefined);
                       }}
-                      callTool={(name, params) => {
+                      callTool={async (name, params) => {
                         clearError("tools");
-                        callTool(name, params);
+                        setToolResult(null);
+                        await callTool(name, params);
                       }}
                       selectedTool={selectedTool}
                       setSelectedTool={(tool) => {
@@ -654,7 +682,7 @@ const App = () => {
                     <ConsoleTab />
                     <PingTab
                       onPingClick={() => {
-                        void makeRequest(
+                        void sendMCPRequest(
                           {
                             method: "ping" as const,
                           },
