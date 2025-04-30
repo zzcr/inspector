@@ -280,6 +280,8 @@ export function useConnection({
       return;
     }
     let mcpProxyServerUrl;
+    const originalUrl = new URL(sseUrl);
+    
     switch (transportType) {
       case "stdio":
         mcpProxyServerUrl = new URL(`${getMCPProxyAddress(config)}/stdio`);
@@ -290,12 +292,12 @@ export function useConnection({
 
       case "sse":
         mcpProxyServerUrl = new URL(`${getMCPProxyAddress(config)}/sse`);
-        mcpProxyServerUrl.searchParams.append("url", sseUrl);
+        mcpProxyServerUrl.searchParams.append("url", originalUrl.toString());
         break;
 
       case "streamable-http":
         mcpProxyServerUrl = new URL(`${getMCPProxyAddress(config)}/mcp`);
-        mcpProxyServerUrl.searchParams.append("url", sseUrl);
+        mcpProxyServerUrl.searchParams.append("url", originalUrl.toString());
         break;
     }
     (mcpProxyServerUrl as URL).searchParams.append(
