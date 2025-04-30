@@ -173,8 +173,12 @@ describe("useConnection", () => {
   });
 
   describe("URL Port Handling", () => {
-    const SSEClientTransport = jest.requireMock("@modelcontextprotocol/sdk/client/sse.js").SSEClientTransport;
-    const StreamableHTTPClientTransport = jest.requireMock("@modelcontextprotocol/sdk/client/streamableHttp.js").StreamableHTTPClientTransport;
+    const SSEClientTransport = jest.requireMock(
+      "@modelcontextprotocol/sdk/client/sse.js",
+    ).SSEClientTransport;
+    const StreamableHTTPClientTransport = jest.requireMock(
+      "@modelcontextprotocol/sdk/client/streamableHttp.js",
+    ).StreamableHTTPClientTransport;
 
     beforeEach(() => {
       jest.clearAllMocks();
@@ -194,7 +198,9 @@ describe("useConnection", () => {
       });
 
       const call = SSEClientTransport.mock.calls[0][0];
-      expect(call.toString()).toContain("url=https%3A%2F%2Fexample.com%3A8443%2Fapi");
+      expect(call.toString()).toContain(
+        "url=https%3A%2F%2Fexample.com%3A8443%2Fapi",
+      );
     });
 
     test("preserves HTTP port number when connecting", async () => {
@@ -211,7 +217,9 @@ describe("useConnection", () => {
       });
 
       const call = SSEClientTransport.mock.calls[0][0];
-      expect(call.toString()).toContain("url=http%3A%2F%2Flocalhost%3A3000%2Fapi");
+      expect(call.toString()).toContain(
+        "url=http%3A%2F%2Flocalhost%3A3000%2Fapi",
+      );
     });
 
     test("uses default port for HTTPS when not specified", async () => {
@@ -246,7 +254,9 @@ describe("useConnection", () => {
       });
 
       const call = StreamableHTTPClientTransport.mock.calls[0][0];
-      expect(call.toString()).toContain("url=https%3A%2F%2Fexample.com%3A8443%2Fapi");
+      expect(call.toString()).toContain(
+        "url=https%3A%2F%2Fexample.com%3A8443%2Fapi",
+      );
     });
   });
 });
