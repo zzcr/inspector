@@ -15,7 +15,6 @@ export type TransportOptions = {
 
 function createSSETransport(options: TransportOptions): Transport {
   const baseUrl = new URL(options.url ?? "");
-  // Create new URL while preserving the port from baseUrl
   const sseUrl = new URL("/sse", baseUrl);
   if (baseUrl.port) {
     sseUrl.port = baseUrl.port;
