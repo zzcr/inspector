@@ -280,7 +280,6 @@ export function useConnection({
       return;
     }
     let mcpProxyServerUrl;
-    
     switch (transportType) {
       case "stdio":
         mcpProxyServerUrl = new URL(`${getMCPProxyAddress(config)}/stdio`);
