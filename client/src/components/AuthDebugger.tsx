@@ -183,6 +183,7 @@ const AuthDebugger = ({
         latestError: null,
         oauthClientInfo: null,
         authorizationCode: "",
+        authorizationUrl: "",
         validationError: null,
         oauthMetadata: null,
         statusMessage: {
