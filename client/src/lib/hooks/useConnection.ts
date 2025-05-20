@@ -297,11 +297,15 @@ export function useConnection({
         bearerToken || (await serverAuthProvider.tokens())?.access_token;
       if (token) {
         const authHeaderName = headerName || "Authorization";
-        headers[authHeaderName] = token;
         
         // Add custom header name as a special request header to let the server know which header to pass through 
-        if (headerName && headerName.toLowerCase() !== "authorization") {
-          headers["x-custom-auth-header"] = headerName;
+        if (authHeaderName.toLowerCase() !== "authorization") {
+          headers[authHeaderName] = token;
+          if (headerName) {
+            headers["x-custom-auth-header"] = headerName;
+          }
+        } else {
+          headers[authHeaderName] = `Bearer ${token}`;
         }
       }
 

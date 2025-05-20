@@ -95,9 +95,9 @@ const createTransport = async (req: express.Request): Promise<Transport> => {
     // If the header "x-custom-auth-header" is present, use its value as the custom header name.
     if (req.headers["x-custom-auth-header"] !== undefined) {
       const customHeaderName = req.headers["x-custom-auth-header"] as string;
-      if (req.headers[customHeaderName.toLowerCase()] !== undefined) {
-        const value = req.headers[customHeaderName.toLowerCase()];
-        headers[customHeaderName] = Array.isArray(value) ? value[value.length - 1] : value as string;
+      if (req.headers[customHeaderName] !== undefined) {
+        const value = req.headers[customHeaderName];
+        headers[customHeaderName] = value as string;
       }
     }
 
@@ -132,9 +132,9 @@ const createTransport = async (req: express.Request): Promise<Transport> => {
     // If the header "x-custom-auth-header" is present, use its value as the custom header name.
     if (req.headers["x-custom-auth-header"] !== undefined) {
       const customHeaderName = req.headers["x-custom-auth-header"] as string;
-      if (req.headers[customHeaderName.toLowerCase()] !== undefined) {
-        const value = req.headers[customHeaderName.toLowerCase()];
-        headers[customHeaderName] = Array.isArray(value) ? value[value.length - 1] : value as string;
+      if (req.headers[customHeaderName] !== undefined) {
+        const value = req.headers[customHeaderName];
+        headers[customHeaderName] = value as string;
       }
     }
 
