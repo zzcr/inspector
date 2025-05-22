@@ -34,11 +34,15 @@ export const oauthTransitions: Record<OAuthStep, StateTransition> = {
   metadata_discovery: {
     canTransition: async () => true,
     execute: async (context) => {
-
-      try {
-
-      }
-      const resourceMetadata = fetchProtectedResourceMetadata(serverUrl)
+      const authServerUrl = context.serverUrl;
+      // try {
+      //   const resourceMetadata = await fetchProtectedResourceMetadata(context.serverUrl);
+      //   if (resourceMetadata && resourceMetadata) {
+      //     authServerUrl = resourceMetadata
+      //   }
+      // } catch (_error) {
+      //   // pass
+      // }
 
       const metadata = await discoverOAuthMetadata(authServerUrl);
       if (!metadata) {
