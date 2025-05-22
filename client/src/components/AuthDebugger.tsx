@@ -179,7 +179,7 @@ const AuthDebugger = ({
       serverAuthProvider.clear();
       updateAuthState({
         oauthTokens: null,
-        oauthStep: "resource_metadata_discovery",
+        oauthStep: "metadata_discovery",
         latestError: null,
         oauthClientInfo: null,
         authorizationCode: "",

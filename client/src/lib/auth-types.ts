@@ -7,7 +7,6 @@ import {
 
 // OAuth flow steps
 export type OAuthStep =
-  | "resource_metadata_discovery"
   | "metadata_discovery"
   | "client_registration"
   | "authorization_redirect"

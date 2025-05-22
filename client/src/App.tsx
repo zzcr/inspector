@@ -125,7 +125,7 @@ const App = () => {
     isInitiatingAuth: false,
     oauthTokens: null,
     loading: true,
-    oauthStep: "resource_metadata_discovery",
+    oauthStep: "metadata_discovery",
     oauthMetadata: null,
     resourceMetadata: null,
     oauthClientInfo: null,

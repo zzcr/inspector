@@ -20,31 +20,26 @@ export interface StateTransition {
   execute: (context: StateMachineContext) => Promise<void>;
 }
 
+const fetchProtectedResourceMetadata = async (serverUrl: string): Promise<object> => {
+  // TODO: use sdk
+  const url = new URL("/.well-known/oauth-protected-resource", serverUrl);
+  const response = await fetch(url);
+  const resourceMetadata = await response.json();
+
+  return resourceMetadata;
+}
+
 // State machine transitions
 export const oauthTransitions: Record<OAuthStep, StateTransition> = {
-  resource_metadata_discovery: {
+  metadata_discovery: {
     canTransition: async () => true,
     execute: async (context) => {
-      // TODO: use sdk
-      const url = new URL("/.well-known/oauth-protected-resource", context.serverUrl);
-      const response = await fetch(url);
 
-      const resourceMetadata = await response.json();
-      context.updateState({
-        resourceMetadata: resourceMetadata,
-        oauthStep: "metadata_discovery",
-      });
-    },
-  },
+      try {
 
-  metadata_discovery: {
-    canTransition: async (context) => !!context.state.resourceMetadata,
-    execute: async (context) => {
-      // TODO: use sdk
-      let authServerUrl = context.serverUrl;
-      if (context.state.resourceMetadata?.authorization_servers?.[0]) {
-        authServerUrl = context.state.resourceMetadata.authorization_servers[0];
       }
+      const resourceMetadata = fetchProtectedResourceMetadata(serverUrl)
+
       const metadata = await discoverOAuthMetadata(authServerUrl);
       if (!metadata) {
         throw new Error("Failed to discover OAuth metadata");
@@ -52,6 +47,7 @@ export const oauthTransitions: Record<OAuthStep, StateTransition> = {
       const parsedMetadata = await OAuthMetadataSchema.parseAsync(metadata);
       context.provider.saveServerMetadata(parsedMetadata);
       context.updateState({
+        resourceMetadata,
         oauthMetadata: parsedMetadata,
         oauthStep: "client_registration",
       });

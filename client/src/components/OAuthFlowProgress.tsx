@@ -57,6 +57,7 @@ interface OAuthFlowProgressProps {
 }
 
 const steps: Array<OAuthStep> = [
+  "resource_metadata_discovery",
   "metadata_discovery",
   "client_registration",
   "authorization_redirect",
@@ -78,16 +79,6 @@ export const OAuthFlowProgress = ({
   const [clientInfo, setClientInfo] = useState<OAuthClientInformation | null>(
     null,
   );
-
-  const steps: Array<OAuthStep> = [
-    "resource_metadata_discovery",
-    "metadata_discovery",
-    "client_registration",
-    "authorization_redirect",
-    "authorization_code",
-    "token_request",
-    "complete",
-  ];
 
   const currentStepIdx = steps.findIndex((s) => s === authState.oauthStep);
 
@@ -135,8 +126,8 @@ export const OAuthFlowProgress = ({
 
       <div className="space-y-3">
         <OAuthStepDetails
-          label="Resource Metadata Discovery"
-          {...getStepProps("resource_metadata_discovery")}
+          label="Metadata Discovery"
+          {...getStepProps("metadata_discovery")}
         >
           {authState.resourceMetadata && (
             <details className="text-xs mt-2">
@@ -148,11 +139,6 @@ export const OAuthFlowProgress = ({
               </pre>
             </details>
           )}
-        </OAuthStepDetails>
-        <OAuthStepDetails
-          label="Metadata Discovery"
-          {...getStepProps("metadata_discovery")}
-        >
           {provider.getServerMetadata() && (
             <details className="text-xs mt-2">
               <summary className="cursor-pointer text-muted-foreground font-medium">
