@@ -145,8 +145,8 @@ const ToolsTab = ({
           isButtonDisabled={!nextCursor && tools.length > 0}
         />
 
-        <div className="bg-card rounded-lg shadow">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+        <div className="bg-card border border-border rounded-lg shadow">
+          <div className="p-4 border-b border-gray-200 dark:border-border">
             <h3 className="font-semibold">
               {selectedTool ? selectedTool.name : "Select a tool"}
             </h3>
@@ -154,7 +154,7 @@ const ToolsTab = ({
           <div className="p-4">
             {selectedTool ? (
               <div className="space-y-4">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   {selectedTool.description}
                 </p>
                 {Object.entries(selectedTool.inputSchema.properties ?? []).map(
@@ -164,7 +164,7 @@ const ToolsTab = ({
                       <div key={key}>
                         <Label
                           htmlFor={key}
-                          className="block text-sm font-medium text-gray-700"
+                          className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                         >
                           {key}
                         </Label>
