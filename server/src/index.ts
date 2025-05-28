@@ -301,8 +301,9 @@ app.get("/sse", async (req, res) => {
 
     const webAppTransport = new SSEServerTransport("/message", res);
     webAppTransports.set(webAppTransport.sessionId, webAppTransport);
+    console.log("Created client transport");
     serverTransports.set(webAppTransport.sessionId, serverTransport);
-    console.log("Created client/server transports");
+    console.log("Created server transport");
 
     await webAppTransport.start();
 
