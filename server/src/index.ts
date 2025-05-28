@@ -283,7 +283,7 @@ app.get("/sse", async (req, res) => {
     );
     let serverTransport: Transport | undefined;
     try {
-      serverTransport = (await createTransport(req));
+      serverTransport = await createTransport(req);
     } catch (error) {
       if (error instanceof SseError && error.code === 401) {
         console.error(
