@@ -281,9 +281,9 @@ app.get("/sse", async (req, res) => {
     console.log(
       "New SSE connection. NOTE: The sse transport is deprecated and has been replaced by streamable-http",
     );
-    let serverTransport: SSEServerTransport | undefined;
+    let serverTransport: Transport | undefined;
     try {
-      serverTransport = (await createTransport(req)) as SSEServerTransport;
+      serverTransport = (await createTransport(req));
     } catch (error) {
       if (error instanceof SseError && error.code === 401) {
         console.error(
