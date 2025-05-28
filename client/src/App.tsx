@@ -28,7 +28,10 @@ import React, {
   useState,
 } from "react";
 import { useConnection } from "./lib/hooks/useConnection";
-import { useDraggablePane, useDraggableSidebar } from "./lib/hooks/useDraggablePane";
+import {
+  useDraggablePane,
+  useDraggableSidebar,
+} from "./lib/hooks/useDraggablePane";
 import { StdErrNotification } from "./lib/notificationTypes";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -163,7 +166,11 @@ const App = () => {
   const progressTokenRef = useRef(0);
 
   const { height: historyPaneHeight, handleDragStart } = useDraggablePane(300);
-  const { width: sidebarWidth, isDragging: isSidebarDragging, handleDragStart: handleSidebarDragStart } = useDraggableSidebar(320);
+  const {
+    width: sidebarWidth,
+    isDragging: isSidebarDragging,
+    handleDragStart: handleSidebarDragStart,
+  } = useDraggableSidebar(320);
 
   const {
     connectionStatus,
@@ -564,7 +571,12 @@ const App = () => {
   return (
     <div className="flex h-screen bg-background">
       <div
-        style={{ width: sidebarWidth, minWidth: 200, maxWidth: 600, transition: isSidebarDragging ? 'none' : 'width 0.15s' }}
+        style={{
+          width: sidebarWidth,
+          minWidth: 200,
+          maxWidth: 600,
+          transition: isSidebarDragging ? "none" : "width 0.15s",
+        }}
         className="bg-card border-r border-border flex flex-col h-full relative"
       >
         <Sidebar
@@ -596,7 +608,16 @@ const App = () => {
         {/* Drag handle for resizing sidebar */}
         <div
           onMouseDown={handleSidebarDragStart}
-          style={{ cursor: 'col-resize', position: 'absolute', top: 0, right: 0, width: 6, height: '100%', zIndex: 10, background: isSidebarDragging ? 'rgba(0,0,0,0.08)' : 'transparent' }}
+          style={{
+            cursor: "col-resize",
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: 6,
+            height: "100%",
+            zIndex: 10,
+            background: isSidebarDragging ? "rgba(0,0,0,0.08)" : "transparent",
+          }}
           aria-label="Resize sidebar"
           data-testid="sidebar-drag-handle"
         />

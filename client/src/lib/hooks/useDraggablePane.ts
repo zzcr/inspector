@@ -72,7 +72,10 @@ export function useDraggableSidebar(initialWidth: number) {
     (e: MouseEvent) => {
       if (!isDragging) return;
       const deltaX = e.clientX - dragStartX.current;
-      const newWidth = Math.max(200, Math.min(600, dragStartWidth.current + deltaX));
+      const newWidth = Math.max(
+        200,
+        Math.min(600, dragStartWidth.current + deltaX),
+      );
       setWidth(newWidth);
     },
     [isDragging],
