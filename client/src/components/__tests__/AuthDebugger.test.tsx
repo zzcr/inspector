@@ -106,7 +106,9 @@ describe("AuthDebugger", () => {
 
     mockDiscoverOAuthMetadata.mockResolvedValue(mockOAuthMetadata);
     mockRegisterClient.mockResolvedValue(mockOAuthClientInfo);
-    mockDiscoverOAuthProtectedResourceMetadata.mockResolvedValue(null);
+    mockDiscoverOAuthProtectedResourceMetadata.mockRejectedValue(
+      new Error("No protected resource metadata found")
+    );
     mockStartAuthorization.mockImplementation(async (_sseUrl, options) => {
       const authUrl = new URL("https://oauth.example.com/authorize");
 
@@ -448,7 +450,7 @@ describe("AuthDebugger", () => {
       await act(async () => {
         renderAuthDebugger({
           updateAuthState,
-          authState: { ...defaultAuthState, loading: false },
+          authState: { ...defaultAuthState },
         });
       });
 
@@ -471,7 +473,7 @@ describe("AuthDebugger", () => {
       ).mock.calls.find((call) => call[0] === SESSION_KEYS.AUTH_DEBUGGER_STATE);
 
       expect(storedStateCall).toBeDefined();
-      const storedState = JSON.parse(storedStateCall![1]);
+      const storedState = JSON.parse(storedStateCall![1] as string);
 
       expect(storedState).toMatchObject({
         oauthStep: "authorization_code",
@@ -485,6 +487,121 @@ describe("AuthDebugger", () => {
           client_id: "test_client_id",
         }),
       });
+    });
+  });
+
+  describe("OAuth Protected Resource Metadata", () => {
+    it("should successfully fetch and display protected resource metadata", async () => {
+      const updateAuthState = jest.fn();
+      const mockResourceMetadata = {
+        resource: "https://example.com/api",
+        authorization_servers: ["https://custom-auth.example.com"],
+        bearer_methods_supported: ["header", "body"],
+        resource_documentation: "https://example.com/api/docs",
+        resource_policy_uri: "https://example.com/api/policy",
+      };
+
+      // Mock successful metadata discovery
+      mockDiscoverOAuthProtectedResourceMetadata.mockResolvedValue(
+        mockResourceMetadata
+      );
+      mockDiscoverOAuthMetadata.mockResolvedValue(mockOAuthMetadata);
+
+      await act(async () => {
+        renderAuthDebugger({
+          updateAuthState,
+          authState: { ...defaultAuthState },
+        });
+      });
+
+      // Click Guided OAuth Flow to start the process
+      await act(async () => {
+        fireEvent.click(screen.getByText("Guided OAuth Flow"));
+      });
+
+      // Verify that the flow started with metadata discovery
+      expect(updateAuthState).toHaveBeenCalledWith({
+        oauthStep: "metadata_discovery",
+        authorizationUrl: null,
+        statusMessage: null,
+        latestError: null,
+      });
+
+      // Click Continue to trigger metadata discovery
+      const continueButton = await screen.findByText("Continue");
+      await act(async () => {
+        fireEvent.click(continueButton);
+      });
+
+      // Wait for the metadata to be fetched
+      await waitFor(() => {
+        expect(mockDiscoverOAuthProtectedResourceMetadata).toHaveBeenCalledWith(
+          "https://example.com"
+        );
+      });
+
+      // Verify the state was updated with the resource metadata
+      await waitFor(() => {
+        expect(updateAuthState).toHaveBeenCalledWith(
+          expect.objectContaining({
+            resourceMetadata: mockResourceMetadata,
+            authServerUrl: new URL("https://custom-auth.example.com"),
+            oauthStep: "client_registration",
+          })
+        );
+      });
+    });
+
+    it("should handle protected resource metadata fetch failure gracefully", async () => {
+      const updateAuthState = jest.fn();
+      const mockError = new Error("Failed to fetch resource metadata");
+
+      // Mock failed metadata discovery
+      mockDiscoverOAuthProtectedResourceMetadata.mockRejectedValue(mockError);
+      // But OAuth metadata should still work with the original URL
+      mockDiscoverOAuthMetadata.mockResolvedValue(mockOAuthMetadata);
+
+      await act(async () => {
+        renderAuthDebugger({
+          updateAuthState,
+          authState: { ...defaultAuthState },
+        });
+      });
+
+      // Click Guided OAuth Flow
+      await act(async () => {
+        fireEvent.click(screen.getByText("Guided OAuth Flow"));
+      });
+
+      // Click Continue to trigger metadata discovery
+      const continueButton = await screen.findByText("Continue");
+      await act(async () => {
+        fireEvent.click(continueButton);
+      });
+
+      // Wait for the metadata fetch to fail
+      await waitFor(() => {
+        expect(mockDiscoverOAuthProtectedResourceMetadata).toHaveBeenCalledWith(
+          "https://example.com"
+        );
+      });
+
+      // Verify the flow continues despite the error
+      await waitFor(() => {
+        expect(updateAuthState).toHaveBeenCalledWith(
+          expect.objectContaining({
+            resourceMetadataError: mockError,
+            // Should use the original server URL as fallback
+            authServerUrl: new URL("https://example.com"),
+            oauthStep: "client_registration",
+          })
+        );
+      });
+
+      // Verify that regular OAuth metadata discovery was still called
+      expect(mockDiscoverOAuthMetadata).toHaveBeenCalledWith(
+        new URL("https://example.com")
+      );
     });
   });
 });

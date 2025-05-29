@@ -329,8 +329,6 @@ const App = () => {
         }
       } catch (error) {
         console.error("Error loading OAuth tokens:", error);
-      } finally {
-        updateAuthState({ loading: false });
       }
     };
 

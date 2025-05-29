@@ -60,23 +60,23 @@ const AuthDebugger = ({
   authState,
   updateAuthState,
 }: AuthDebuggerProps) => {
-  // Initialize loading state
+  // Check for existing tokens on mount
   useEffect(() => {
-    if (authState.loading && serverUrl) {
-      // Check if we have existing tokens
+    if (serverUrl && !authState.oauthTokens) {
       const checkTokens = async () => {
         const provider = new DebugInspectorOAuthClientProvider(serverUrl);
         const existingTokens = await provider.tokens();
-
-        updateAuthState({
-          loading: false,
-          oauthTokens: existingTokens || null,
-        });
+        if (existingTokens) {
+          updateAuthState({
+            oauthTokens: existingTokens,
+            oauthStep: "complete",
+          });
+        }
       };
-
       checkTokens();
     }
-  }, [serverUrl, authState.loading, updateAuthState]);
+  }, [serverUrl]); // Only run when serverUrl changes
+
   const startOAuthFlow = useCallback(() => {
     if (!serverUrl) {
       updateAuthState({
@@ -241,10 +241,7 @@ const AuthDebugger = ({
                 <StatusMessage message={authState.statusMessage} />
               )}
 
-              {authState.loading ? (
-                <p>Loading authentication status...</p>
-              ) : (
-                <div className="space-y-4">
+              <div className="space-y-4">
                   {authState.oauthTokens && (
                     <div className="space-y-2">
                       <p className="text-sm font-medium">Access Token:</p>
@@ -286,7 +283,6 @@ const AuthDebugger = ({
                     the standard automatic flow.
                   </p>
                 </div>
-              )}
             </div>
 
             <OAuthFlowProgress

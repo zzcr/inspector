@@ -27,7 +27,6 @@ export interface StatusMessage {
 export interface AuthDebuggerState {
   isInitiatingAuth: boolean;
   oauthTokens: OAuthTokens | null;
-  loading: boolean;
   oauthStep: OAuthStep;
   resourceMetadata: OAuthProtectedResourceMetadata | null;
   resourceMetadataError:
@@ -47,7 +46,6 @@ export interface AuthDebuggerState {
 export const EMPTY_DEBUGGER_STATE: AuthDebuggerState = {
   isInitiatingAuth: false,
   oauthTokens: null,
-  loading: true,
   oauthStep: "metadata_discovery",
   oauthMetadata: null,
   resourceMetadata: null,
