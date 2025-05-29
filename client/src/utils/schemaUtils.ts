@@ -3,7 +3,6 @@ import Ajv from "ajv";
 import type { ValidateFunction } from "ajv";
 import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 
-// Create a single Ajv instance following the SDK pattern
 const ajv = new Ajv();
 
 // Cache for compiled validators
