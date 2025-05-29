@@ -26,13 +26,13 @@ export const oauthTransitions: Record<OAuthStep, StateTransition> = {
   metadata_discovery: {
     canTransition: async () => true,
     execute: async (context) => {
-      let authServerUrl = context.serverUrl;
+      let authServerUrl = new URL(context.serverUrl);
       let resourceMetadata: OAuthProtectedResourceMetadata | null = null;
       let resourceMetadataError: Error | null = null;
       try {
         resourceMetadata = await discoverOAuthProtectedResourceMetadata(context.serverUrl);
         if (resourceMetadata && resourceMetadata.authorization_servers?.length) {
-          authServerUrl = resourceMetadata.authorization_servers[0];
+          authServerUrl = new URL(resourceMetadata.authorization_servers[0]);
         }
       } catch (e) {
         console.info(`Failed to find protected resource metadata: ${e}`);
@@ -53,6 +53,7 @@ export const oauthTransitions: Record<OAuthStep, StateTransition> = {
       context.updateState({
         resourceMetadata,
         resourceMetadataError,
+        authServerUrl,
         oauthMetadata: parsedMetadata,
         oauthStep: "client_registration",
       });
