@@ -5,6 +5,7 @@ import { AlertCircle } from "lucide-react";
 import { AuthDebuggerState, EMPTY_DEBUGGER_STATE } from "../lib/auth-types";
 import { OAuthFlowProgress } from "./OAuthFlowProgress";
 import { OAuthStateMachine } from "../lib/oauth-state-machine";
+import { SESSION_KEYS } from "../lib/constants";
 
 export interface AuthDebuggerProps {
   serverUrl: string;
@@ -141,6 +142,11 @@ const AuthDebugger = ({
           currentState.oauthStep === "authorization_code" &&
           currentState.authorizationUrl
         ) {
+          // Store the current auth state before redirecting
+          sessionStorage.setItem(
+            SESSION_KEYS.AUTH_DEBUGGER_STATE,
+            JSON.stringify(currentState)
+          );
           // Open the authorization URL automatically
           window.location.href = currentState.authorizationUrl;
           break;

@@ -234,21 +234,36 @@ const App = () => {
     ({
       authorizationCode,
       errorMsg,
+      restoredState,
     }: {
       authorizationCode?: string;
       errorMsg?: string;
+      restoredState?: AuthDebuggerState;
     }) => {
       setIsAuthDebuggerVisible(true);
-      if (authorizationCode) {
+      
+      if (restoredState) {
+        // Restore the previous auth state
         updateAuthState({
-          authorizationCode,
-          oauthStep: "token_request",
+          ...restoredState,
+          // Update with the new authorization code if provided
+          authorizationCode: authorizationCode || restoredState.authorizationCode,
+          oauthStep: authorizationCode ? "token_request" : restoredState.oauthStep,
+          latestError: errorMsg ? new Error(errorMsg) : restoredState.latestError,
         });
-      }
-      if (errorMsg) {
-        updateAuthState({
-          latestError: new Error(errorMsg),
-        });
+      } else {
+        // Fallback to the original behavior if no state was restored
+        if (authorizationCode) {
+          updateAuthState({
+            authorizationCode,
+            oauthStep: "token_request",
+          });
+        }
+        if (errorMsg) {
+          updateAuthState({
+            latestError: new Error(errorMsg),
+          });
+        }
       }
     },
     [],
