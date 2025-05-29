@@ -20,6 +20,7 @@ import {
 import { OAuthTokensSchema } from "@modelcontextprotocol/sdk/shared/auth.js";
 import { SESSION_KEYS, getServerSpecificKey } from "./lib/constants";
 import { AuthDebuggerState, EMPTY_DEBUGGER_STATE } from "./lib/auth-types";
+import { OAuthStateMachine } from "./lib/oauth-state-machine";
 import { cacheToolOutputSchemas } from "./utils/schemaUtils";
 import React, {
   Suspense,
@@ -231,7 +232,7 @@ const App = () => {
 
   // Update OAuth debug state during debug callback
   const onOAuthDebugConnect = useCallback(
-    ({
+    async ({
       authorizationCode,
       errorMsg,
       restoredState,
@@ -241,29 +242,64 @@ const App = () => {
       restoredState?: AuthDebuggerState;
     }) => {
       setIsAuthDebuggerVisible(true);
-      
-      if (restoredState) {
-        // Restore the previous auth state
+
+      if (errorMsg) {
         updateAuthState({
-          ...restoredState,
-          // Update with the new authorization code if provided
-          authorizationCode: authorizationCode || restoredState.authorizationCode,
-          oauthStep: authorizationCode ? "token_request" : restoredState.oauthStep,
-          latestError: errorMsg ? new Error(errorMsg) : restoredState.latestError,
+          latestError: new Error(errorMsg),
         });
-      } else {
+        return;
+      }
+
+      if (restoredState && authorizationCode) {
+        // Restore the previous auth state and continue the OAuth flow
+        let currentState: AuthDebuggerState = {
+          ...restoredState,
+          authorizationCode,
+          oauthStep: "token_request",
+          isInitiatingAuth: true,
+          statusMessage: null,
+          latestError: null,
+        };
+
+        try {
+          // Create a new state machine instance to continue the flow
+          const stateMachine = new OAuthStateMachine(sseUrl, (updates) => {
+            currentState = { ...currentState, ...updates };
+          });
+
+          // Continue stepping through the OAuth flow from where we left off
+          while (currentState.oauthStep !== "complete" && currentState.oauthStep !== "authorization_code") {
+            await stateMachine.executeStep(currentState);
+          }
+
+          if (currentState.oauthStep === "complete") {
+            // After the flow completes or reaches a user-input step, update the app state
+            updateAuthState({
+              ...currentState,
+              statusMessage: {
+                type: "success",
+                message: "Authentication completed successfully",
+              },
+              isInitiatingAuth: false,
+            });
+          }
+        } catch (error) {
+          console.error("OAuth continuation error:", error);
+          updateAuthState({
+            latestError: error instanceof Error ? error : new Error(String(error)),
+            statusMessage: {
+              type: "error",
+              message: `Failed to complete OAuth flow: ${error instanceof Error ? error.message : String(error)}`,
+            },
+            isInitiatingAuth: false,
+          });
+        }
+      } else if (authorizationCode) {
         // Fallback to the original behavior if no state was restored
-        if (authorizationCode) {
-          updateAuthState({
-            authorizationCode,
-            oauthStep: "token_request",
-          });
-        }
-        if (errorMsg) {
-          updateAuthState({
-            latestError: new Error(errorMsg),
-          });
-        }
+        updateAuthState({
+          authorizationCode,
+          oauthStep: "token_request",
+        });
       }
     },
     [],
