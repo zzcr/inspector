@@ -107,7 +107,7 @@ describe("AuthDebugger", () => {
     mockDiscoverOAuthMetadata.mockResolvedValue(mockOAuthMetadata);
     mockRegisterClient.mockResolvedValue(mockOAuthClientInfo);
     mockDiscoverOAuthProtectedResourceMetadata.mockRejectedValue(
-      new Error("No protected resource metadata found")
+      new Error("No protected resource metadata found"),
     );
     mockStartAuthorization.mockImplementation(async (_sseUrl, options) => {
       const authUrl = new URL("https://oauth.example.com/authorize");
@@ -503,7 +503,7 @@ describe("AuthDebugger", () => {
 
       // Mock successful metadata discovery
       mockDiscoverOAuthProtectedResourceMetadata.mockResolvedValue(
-        mockResourceMetadata
+        mockResourceMetadata,
       );
       mockDiscoverOAuthMetadata.mockResolvedValue(mockOAuthMetadata);
 
@@ -536,7 +536,7 @@ describe("AuthDebugger", () => {
       // Wait for the metadata to be fetched
       await waitFor(() => {
         expect(mockDiscoverOAuthProtectedResourceMetadata).toHaveBeenCalledWith(
-          "https://example.com"
+          "https://example.com",
         );
       });
 
@@ -547,7 +547,7 @@ describe("AuthDebugger", () => {
             resourceMetadata: mockResourceMetadata,
             authServerUrl: new URL("https://custom-auth.example.com"),
             oauthStep: "client_registration",
-          })
+          }),
         );
       });
     });
@@ -582,7 +582,7 @@ describe("AuthDebugger", () => {
       // Wait for the metadata fetch to fail
       await waitFor(() => {
         expect(mockDiscoverOAuthProtectedResourceMetadata).toHaveBeenCalledWith(
-          "https://example.com"
+          "https://example.com",
         );
       });
 
@@ -594,13 +594,13 @@ describe("AuthDebugger", () => {
             // Should use the original server URL as fallback
             authServerUrl: new URL("https://example.com"),
             oauthStep: "client_registration",
-          })
+          }),
         );
       });
 
       // Verify that regular OAuth metadata discovery was still called
       expect(mockDiscoverOAuthMetadata).toHaveBeenCalledWith(
-        new URL("https://example.com")
+        new URL("https://example.com"),
       );
     });
   });

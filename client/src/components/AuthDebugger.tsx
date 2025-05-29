@@ -242,47 +242,47 @@ const AuthDebugger = ({
               )}
 
               <div className="space-y-4">
-                  {authState.oauthTokens && (
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">Access Token:</p>
-                      <div className="bg-muted p-2 rounded-md text-xs overflow-x-auto">
-                        {authState.oauthTokens.access_token.substring(0, 25)}...
-                      </div>
+                {authState.oauthTokens && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Access Token:</p>
+                    <div className="bg-muted p-2 rounded-md text-xs overflow-x-auto">
+                      {authState.oauthTokens.access_token.substring(0, 25)}...
                     </div>
-                  )}
-
-                  <div className="flex gap-4">
-                    <Button
-                      variant="outline"
-                      onClick={startOAuthFlow}
-                      disabled={authState.isInitiatingAuth}
-                    >
-                      {authState.oauthTokens
-                        ? "Guided Token Refresh"
-                        : "Guided OAuth Flow"}
-                    </Button>
-
-                    <Button
-                      onClick={handleQuickOAuth}
-                      disabled={authState.isInitiatingAuth}
-                    >
-                      {authState.isInitiatingAuth
-                        ? "Initiating..."
-                        : authState.oauthTokens
-                          ? "Quick Refresh"
-                          : "Quick OAuth Flow"}
-                    </Button>
-
-                    <Button variant="outline" onClick={handleClearOAuth}>
-                      Clear OAuth State
-                    </Button>
                   </div>
+                )}
 
-                  <p className="text-xs text-muted-foreground">
-                    Choose "Guided" for step-by-step instructions or "Quick" for
-                    the standard automatic flow.
-                  </p>
+                <div className="flex gap-4">
+                  <Button
+                    variant="outline"
+                    onClick={startOAuthFlow}
+                    disabled={authState.isInitiatingAuth}
+                  >
+                    {authState.oauthTokens
+                      ? "Guided Token Refresh"
+                      : "Guided OAuth Flow"}
+                  </Button>
+
+                  <Button
+                    onClick={handleQuickOAuth}
+                    disabled={authState.isInitiatingAuth}
+                  >
+                    {authState.isInitiatingAuth
+                      ? "Initiating..."
+                      : authState.oauthTokens
+                        ? "Quick Refresh"
+                        : "Quick OAuth Flow"}
+                  </Button>
+
+                  <Button variant="outline" onClick={handleClearOAuth}>
+                    Clear OAuth State
+                  </Button>
                 </div>
+
+                <p className="text-xs text-muted-foreground">
+                  Choose "Guided" for step-by-step instructions or "Quick" for
+                  the standard automatic flow.
+                </p>
+              </div>
             </div>
 
             <OAuthFlowProgress
