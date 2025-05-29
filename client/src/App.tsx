@@ -122,7 +122,8 @@ const App = () => {
   const [isAuthDebuggerVisible, setIsAuthDebuggerVisible] = useState(false);
 
   // Auth debugger state
-  const [authState, setAuthState] = useState<AuthDebuggerState>(EMPTY_DEBUGGER_STATE);
+  const [authState, setAuthState] =
+    useState<AuthDebuggerState>(EMPTY_DEBUGGER_STATE);
 
   // Helper function to update specific auth state properties
   const updateAuthState = (updates: Partial<AuthDebuggerState>) => {
@@ -268,7 +269,10 @@ const App = () => {
           });
 
           // Continue stepping through the OAuth flow from where we left off
-          while (currentState.oauthStep !== "complete" && currentState.oauthStep !== "authorization_code") {
+          while (
+            currentState.oauthStep !== "complete" &&
+            currentState.oauthStep !== "authorization_code"
+          ) {
             await stateMachine.executeStep(currentState);
           }
 
@@ -286,7 +290,8 @@ const App = () => {
         } catch (error) {
           console.error("OAuth continuation error:", error);
           updateAuthState({
-            latestError: error instanceof Error ? error : new Error(String(error)),
+            latestError:
+              error instanceof Error ? error : new Error(String(error)),
             statusMessage: {
               type: "error",
               message: `Failed to complete OAuth flow: ${error instanceof Error ? error.message : String(error)}`,

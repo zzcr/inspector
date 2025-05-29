@@ -36,9 +36,11 @@ const OAuthDebugCallback = ({ onConnect }: OAuthCallbackProps) => {
       }
 
       const serverUrl = sessionStorage.getItem(SESSION_KEYS.SERVER_URL);
-      
+
       // Try to restore the auth state
-      const storedState = sessionStorage.getItem(SESSION_KEYS.AUTH_DEBUGGER_STATE);
+      const storedState = sessionStorage.getItem(
+        SESSION_KEYS.AUTH_DEBUGGER_STATE,
+      );
       let restoredState = null;
       if (storedState) {
         try {

@@ -7,7 +7,10 @@ import {
   exchangeAuthorization,
   discoverOAuthProtectedResourceMetadata,
 } from "@modelcontextprotocol/sdk/client/auth.js";
-import { OAuthMetadataSchema, OAuthProtectedResourceMetadata } from "@modelcontextprotocol/sdk/shared/auth.js";
+import {
+  OAuthMetadataSchema,
+  OAuthProtectedResourceMetadata,
+} from "@modelcontextprotocol/sdk/shared/auth.js";
 
 export interface StateMachineContext {
   state: AuthDebuggerState;
@@ -30,8 +33,13 @@ export const oauthTransitions: Record<OAuthStep, StateTransition> = {
       let resourceMetadata: OAuthProtectedResourceMetadata | null = null;
       let resourceMetadataError: Error | null = null;
       try {
-        resourceMetadata = await discoverOAuthProtectedResourceMetadata(context.serverUrl);
-        if (resourceMetadata && resourceMetadata.authorization_servers?.length) {
+        resourceMetadata = await discoverOAuthProtectedResourceMetadata(
+          context.serverUrl,
+        );
+        if (
+          resourceMetadata &&
+          resourceMetadata.authorization_servers?.length
+        ) {
           authServerUrl = new URL(resourceMetadata.authorization_servers[0]);
         }
       } catch (e) {

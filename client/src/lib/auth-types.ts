@@ -30,7 +30,10 @@ export interface AuthDebuggerState {
   loading: boolean;
   oauthStep: OAuthStep;
   resourceMetadata: OAuthProtectedResourceMetadata | null;
-  resourceMetadataError: Error | { status: number; statusText: string; message: string } | null;
+  resourceMetadataError:
+    | Error
+    | { status: number; statusText: string; message: string }
+    | null;
   authServerUrl: URL | null;
   oauthMetadata: OAuthMetadata | null;
   oauthClientInfo: OAuthClientInformationFull | OAuthClientInformation | null;
@@ -56,4 +59,4 @@ export const EMPTY_DEBUGGER_STATE: AuthDebuggerState = {
   latestError: null,
   statusMessage: null,
   validationError: null,
-}
+};

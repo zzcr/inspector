@@ -40,6 +40,7 @@ jest.mock("@modelcontextprotocol/sdk/client/auth.js", () => ({
   registerClient: jest.fn(),
   startAuthorization: jest.fn(),
   exchangeAuthorization: jest.fn(),
+  discoverOAuthProtectedResourceMetadata: jest.fn(),
 }));
 
 // Import the functions to get their types
@@ -49,6 +50,7 @@ import {
   startAuthorization,
   exchangeAuthorization,
   auth,
+  discoverOAuthProtectedResourceMetadata,
 } from "@modelcontextprotocol/sdk/client/auth.js";
 import { OAuthMetadata } from "@modelcontextprotocol/sdk/shared/auth.js";
 import { EMPTY_DEBUGGER_STATE } from "@/lib/auth-types";
@@ -67,6 +69,10 @@ const mockExchangeAuthorization = exchangeAuthorization as jest.MockedFunction<
   typeof exchangeAuthorization
 >;
 const mockAuth = auth as jest.MockedFunction<typeof auth>;
+const mockDiscoverOAuthProtectedResourceMetadata =
+  discoverOAuthProtectedResourceMetadata as jest.MockedFunction<
+    typeof discoverOAuthProtectedResourceMetadata
+  >;
 
 const sessionStorageMock = {
   getItem: jest.fn(),
@@ -100,6 +106,7 @@ describe("AuthDebugger", () => {
 
     mockDiscoverOAuthMetadata.mockResolvedValue(mockOAuthMetadata);
     mockRegisterClient.mockResolvedValue(mockOAuthClientInfo);
+    mockDiscoverOAuthProtectedResourceMetadata.mockResolvedValue(null);
     mockStartAuthorization.mockImplementation(async (_sseUrl, options) => {
       const authUrl = new URL("https://oauth.example.com/authorize");
 
@@ -418,6 +425,65 @@ describe("AuthDebugger", () => {
             authorizationUrl: expect.not.stringContaining("scope="),
           }),
         );
+      });
+    });
+  });
+
+  describe("OAuth State Persistence", () => {
+    it("should store auth state to sessionStorage before redirect in Quick OAuth Flow", async () => {
+      const updateAuthState = jest.fn();
+
+      // Mock window.location.href setter
+      delete (window as any).location;
+      window.location = { href: "" } as any;
+
+      // Setup mocks for OAuth flow
+      mockStartAuthorization.mockResolvedValue({
+        authorizationUrl: new URL(
+          "https://oauth.example.com/authorize?client_id=test_client_id&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Foauth%2Fcallback%2Fdebug",
+        ),
+        codeVerifier: "test_verifier",
+      });
+
+      await act(async () => {
+        renderAuthDebugger({
+          updateAuthState,
+          authState: { ...defaultAuthState, loading: false },
+        });
+      });
+
+      // Click Quick OAuth Flow
+      await act(async () => {
+        fireEvent.click(screen.getByText("Quick OAuth Flow"));
+      });
+
+      // Wait for the flow to reach the authorization step
+      await waitFor(() => {
+        expect(sessionStorage.setItem).toHaveBeenCalledWith(
+          SESSION_KEYS.AUTH_DEBUGGER_STATE,
+          expect.stringContaining('"oauthStep":"authorization_code"'),
+        );
+      });
+
+      // Verify the stored state includes all the accumulated data
+      const storedStateCall = (
+        sessionStorage.setItem as jest.Mock
+      ).mock.calls.find((call) => call[0] === SESSION_KEYS.AUTH_DEBUGGER_STATE);
+
+      expect(storedStateCall).toBeDefined();
+      const storedState = JSON.parse(storedStateCall![1]);
+
+      expect(storedState).toMatchObject({
+        oauthStep: "authorization_code",
+        authorizationUrl: expect.stringMatching(
+          /^https:\/\/oauth\.example\.com\/authorize/,
+        ),
+        oauthMetadata: expect.objectContaining({
+          token_endpoint: "https://oauth.example.com/token",
+        }),
+        oauthClientInfo: expect.objectContaining({
+          client_id: "test_client_id",
+        }),
       });
     });
   });

@@ -67,13 +67,13 @@ const AuthDebugger = ({
       const checkTokens = async () => {
         const provider = new DebugInspectorOAuthClientProvider(serverUrl);
         const existingTokens = await provider.tokens();
-        
+
         updateAuthState({
           loading: false,
           oauthTokens: existingTokens || null,
         });
       };
-      
+
       checkTokens();
     }
   }, [serverUrl, authState.loading, updateAuthState]);
@@ -162,7 +162,7 @@ const AuthDebugger = ({
           // Store the current auth state before redirecting
           sessionStorage.setItem(
             SESSION_KEYS.AUTH_DEBUGGER_STATE,
-            JSON.stringify(currentState)
+            JSON.stringify(currentState),
           );
           // Open the authorization URL automatically
           window.location.href = currentState.authorizationUrl;
