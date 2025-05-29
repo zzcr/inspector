@@ -5,8 +5,9 @@ import {
   registerClient,
   startAuthorization,
   exchangeAuthorization,
+  discoverOAuthProtectedResourceMetadata,
 } from "@modelcontextprotocol/sdk/client/auth.js";
-import { OAuthMetadataSchema } from "@modelcontextprotocol/sdk/shared/auth.js";
+import { OAuthMetadataSchema, OAuthProtectedResourceMetadata } from "@modelcontextprotocol/sdk/shared/auth.js";
 
 export interface StateMachineContext {
   state: AuthDebuggerState;
@@ -20,29 +21,28 @@ export interface StateTransition {
   execute: (context: StateMachineContext) => Promise<void>;
 }
 
-const fetchProtectedResourceMetadata = async (serverUrl: string): Promise<object> => {
-  // TODO: use sdk
-  const url = new URL("/.well-known/oauth-protected-resource", serverUrl);
-  const response = await fetch(url);
-  const resourceMetadata = await response.json();
-
-  return resourceMetadata;
-}
-
 // State machine transitions
 export const oauthTransitions: Record<OAuthStep, StateTransition> = {
   metadata_discovery: {
     canTransition: async () => true,
     execute: async (context) => {
-      const authServerUrl = context.serverUrl;
-      // try {
-      //   const resourceMetadata = await fetchProtectedResourceMetadata(context.serverUrl);
-      //   if (resourceMetadata && resourceMetadata) {
-      //     authServerUrl = resourceMetadata
-      //   }
-      // } catch (_error) {
-      //   // pass
-      // }
+      let authServerUrl = context.serverUrl;
+      let resourceMetadata: OAuthProtectedResourceMetadata | null = null;
+      let resourceMetadataError: Error | null = null;
+      try {
+        resourceMetadata = await discoverOAuthProtectedResourceMetadata(context.serverUrl);
+        if (resourceMetadata && resourceMetadata.authorization_servers?.length) {
+          authServerUrl = resourceMetadata.authorization_servers[0];
+        }
+      } catch (e) {
+        console.info(`Failed to find protected resource metadata: ${e}`);
+        console.log(e);
+        if (e instanceof Error) {
+          resourceMetadataError = e;
+        } else {
+          resourceMetadataError = new Error(String(e));
+        }
+      }
 
       const metadata = await discoverOAuthMetadata(authServerUrl);
       if (!metadata) {
@@ -52,6 +52,7 @@ export const oauthTransitions: Record<OAuthStep, StateTransition> = {
       context.provider.saveServerMetadata(parsedMetadata);
       context.updateState({
         resourceMetadata,
+        resourceMetadataError,
         oauthMetadata: parsedMetadata,
         oauthStep: "client_registration",
       });

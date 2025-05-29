@@ -57,7 +57,6 @@ interface OAuthFlowProgressProps {
 }
 
 const steps: Array<OAuthStep> = [
-  "resource_metadata_discovery",
   "metadata_discovery",
   "client_registration",
   "authorization_redirect",
@@ -138,6 +137,19 @@ export const OAuthFlowProgress = ({
                 {JSON.stringify(authState.resourceMetadata, null, 2)}
               </pre>
             </details>
+          )}
+          {authState.resourceMetadataError && (
+            <div className="mt-2 p-3 border border-yellow-300 bg-yellow-50 rounded-md">
+              <p className="text-sm font-small text-yellow-700">
+                Failed to retrieve resource metadata, falling back to /.well-known/oauth-authorization-server:
+              </p>
+              <p className="text-xs text-yellow-600 mt-1">
+                {authState.resourceMetadataError.message}
+                {authState.resourceMetadataError instanceof TypeError
+                  ? " (This could indicate the endpoint doesn't exist or does not have CORS configured)"
+                  : authState.resourceMetadataError['status'] && ` (${authState.resourceMetadataError['status']})`}
+              </p>
+            </div>
           )}
           {provider.getServerMetadata() && (
             <details className="text-xs mt-2">

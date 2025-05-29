@@ -3,6 +3,7 @@ import {
   OAuthClientInformationFull,
   OAuthClientInformation,
   OAuthTokens,
+  OAuthProtectedResourceMetadata,
 } from "@modelcontextprotocol/sdk/shared/auth.js";
 
 // OAuth flow steps
@@ -28,8 +29,8 @@ export interface AuthDebuggerState {
   oauthTokens: OAuthTokens | null;
   loading: boolean;
   oauthStep: OAuthStep;
-  // TODO: use sdk type
-  resourceMetadata: object | null;
+  resourceMetadata: OAuthProtectedResourceMetadata | null;
+  resourceMetadataError: Error | { status: number; statusText: string; message: string } | null;
   oauthMetadata: OAuthMetadata | null;
   oauthClientInfo: OAuthClientInformationFull | OAuthClientInformation | null;
   authorizationUrl: string | null;
@@ -37,4 +38,20 @@ export interface AuthDebuggerState {
   latestError: Error | null;
   statusMessage: StatusMessage | null;
   validationError: string | null;
+}
+
+export const EMPTY_DEBUGGER_STATE: AuthDebuggerState = {
+  isInitiatingAuth: false,
+  oauthTokens: null,
+  loading: true,
+  oauthStep: "metadata_discovery",
+  oauthMetadata: null,
+  resourceMetadata: null,
+  resourceMetadataError: null,
+  oauthClientInfo: null,
+  authorizationUrl: null,
+  authorizationCode: "",
+  latestError: null,
+  statusMessage: null,
+  validationError: null,
 }

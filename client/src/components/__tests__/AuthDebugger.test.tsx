@@ -51,6 +51,7 @@ import {
   auth,
 } from "@modelcontextprotocol/sdk/client/auth.js";
 import { OAuthMetadata } from "@modelcontextprotocol/sdk/shared/auth.js";
+import { EMPTY_DEBUGGER_STATE } from "@/lib/auth-types";
 
 // Type the mocked functions properly
 const mockDiscoverOAuthMetadata = discoverOAuthMetadata as jest.MockedFunction<
@@ -84,19 +85,7 @@ Object.defineProperty(window, "location", {
 });
 
 describe("AuthDebugger", () => {
-  const defaultAuthState = {
-    isInitiatingAuth: false,
-    oauthTokens: null,
-    loading: false,
-    oauthStep: "metadata_discovery" as const,
-    oauthMetadata: null,
-    oauthClientInfo: null,
-    authorizationUrl: null,
-    authorizationCode: "",
-    latestError: null,
-    statusMessage: null,
-    validationError: null,
-  };
+  const defaultAuthState = EMPTY_DEBUGGER_STATE;
 
   const defaultProps = {
     serverUrl: "https://example.com",

@@ -19,7 +19,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { OAuthTokensSchema } from "@modelcontextprotocol/sdk/shared/auth.js";
 import { SESSION_KEYS, getServerSpecificKey } from "./lib/constants";
-import { AuthDebuggerState } from "./lib/auth-types";
+import { AuthDebuggerState, EMPTY_DEBUGGER_STATE } from "./lib/auth-types";
 import { cacheToolOutputSchemas } from "./utils/schemaUtils";
 import React, {
   Suspense,
@@ -121,20 +121,7 @@ const App = () => {
   const [isAuthDebuggerVisible, setIsAuthDebuggerVisible] = useState(false);
 
   // Auth debugger state
-  const [authState, setAuthState] = useState<AuthDebuggerState>({
-    isInitiatingAuth: false,
-    oauthTokens: null,
-    loading: true,
-    oauthStep: "metadata_discovery",
-    oauthMetadata: null,
-    resourceMetadata: null,
-    oauthClientInfo: null,
-    authorizationUrl: null,
-    authorizationCode: "",
-    latestError: null,
-    statusMessage: null,
-    validationError: null,
-  });
+  const [authState, setAuthState] = useState<AuthDebuggerState>(EMPTY_DEBUGGER_STATE);
 
   // Helper function to update specific auth state properties
   const updateAuthState = (updates: Partial<AuthDebuggerState>) => {

@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { DebugInspectorOAuthClientProvider } from "../lib/auth";
 import { AlertCircle } from "lucide-react";
-import { AuthDebuggerState } from "../lib/auth-types";
+import { AuthDebuggerState, EMPTY_DEBUGGER_STATE } from "../lib/auth-types";
 import { OAuthFlowProgress } from "./OAuthFlowProgress";
 import { OAuthStateMachine } from "../lib/oauth-state-machine";
 
@@ -178,14 +178,7 @@ const AuthDebugger = ({
       );
       serverAuthProvider.clear();
       updateAuthState({
-        oauthTokens: null,
-        oauthStep: "metadata_discovery",
-        latestError: null,
-        oauthClientInfo: null,
-        authorizationCode: "",
-        authorizationUrl: "",
-        validationError: null,
-        oauthMetadata: null,
+        ...EMPTY_DEBUGGER_STATE,
         statusMessage: {
           type: "success",
           message: "OAuth tokens cleared successfully",
