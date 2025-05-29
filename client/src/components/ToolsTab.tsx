@@ -9,15 +9,15 @@ import DynamicJsonForm from "./DynamicJsonForm";
 import type { JsonValue, JsonSchemaType } from "@/utils/jsonUtils";
 import { generateDefaultValue } from "@/utils/schemaUtils";
 import {
-  CallToolResultSchema,
   CompatibilityCallToolResult,
   ListToolsResult,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Send, ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import ListPane from "./ListPane";
 import JsonView from "./JsonView";
+import ToolResults from "./ToolResults";
 
 const ToolsTab = ({
   tools,
@@ -41,6 +41,7 @@ const ToolsTab = ({
 }) => {
   const [params, setParams] = useState<Record<string, unknown>>({});
   const [isToolRunning, setIsToolRunning] = useState(false);
+  const [isOutputSchemaExpanded, setIsOutputSchemaExpanded] = useState(false);
 
   useEffect(() => {
     const params = Object.entries(
@@ -51,75 +52,6 @@ const ToolsTab = ({
     ]);
     setParams(Object.fromEntries(params));
   }, [selectedTool]);
-
-  const renderToolResult = () => {
-    if (!toolResult) return null;
-
-    if ("content" in toolResult) {
-      const parsedResult = CallToolResultSchema.safeParse(toolResult);
-      if (!parsedResult.success) {
-        return (
-          <>
-            <h4 className="font-semibold mb-2">Invalid Tool Result:</h4>
-            <JsonView data={toolResult} />
-            <h4 className="font-semibold mb-2">Errors:</h4>
-            {parsedResult.error.errors.map((error, idx) => (
-              <JsonView data={error} key={idx} />
-            ))}
-          </>
-        );
-      }
-      const structuredResult = parsedResult.data;
-      const isError = structuredResult.isError ?? false;
-
-      return (
-        <>
-          <h4 className="font-semibold mb-2">
-            Tool Result:{" "}
-            {isError ? (
-              <span className="text-red-600 font-semibold">Error</span>
-            ) : (
-              <span className="text-green-600 font-semibold">Success</span>
-            )}
-          </h4>
-          {structuredResult.content.map((item, index) => (
-            <div key={index} className="mb-2">
-              {item.type === "text" && (
-                <JsonView data={item.text} isError={isError} />
-              )}
-              {item.type === "image" && (
-                <img
-                  src={`data:${item.mimeType};base64,${item.data}`}
-                  alt="Tool result image"
-                  className="max-w-full h-auto"
-                />
-              )}
-              {item.type === "resource" &&
-                (item.resource?.mimeType?.startsWith("audio/") ? (
-                  <audio
-                    controls
-                    src={`data:${item.resource.mimeType};base64,${item.resource.blob}`}
-                    className="w-full"
-                  >
-                    <p>Your browser does not support audio playback</p>
-                  </audio>
-                ) : (
-                  <JsonView data={item.resource} />
-                ))}
-            </div>
-          ))}
-        </>
-      );
-    } else if ("toolResult" in toolResult) {
-      return (
-        <>
-          <h4 className="font-semibold mb-2">Tool Result (Legacy):</h4>
-
-          <JsonView data={toolResult.toolResult} />
-        </>
-      );
-    }
-  };
 
   return (
     <TabsContent value="tools">
@@ -262,6 +194,42 @@ const ToolsTab = ({
                     );
                   },
                 )}
+                {selectedTool.outputSchema && (
+                  <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-semibold">Output Schema:</h4>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          setIsOutputSchemaExpanded(!isOutputSchemaExpanded)
+                        }
+                        className="h-6 px-2"
+                      >
+                        {isOutputSchemaExpanded ? (
+                          <>
+                            <ChevronUp className="h-3 w-3 mr-1" />
+                            Collapse
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="h-3 w-3 mr-1" />
+                            Expand
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    <div
+                      className={`transition-all ${
+                        isOutputSchemaExpanded
+                          ? ""
+                          : "max-h-[8rem] overflow-y-auto"
+                      }`}
+                    >
+                      <JsonView data={selectedTool.outputSchema} />
+                    </div>
+                  </div>
+                )}
                 <Button
                   onClick={async () => {
                     try {
@@ -285,7 +253,10 @@ const ToolsTab = ({
                     </>
                   )}
                 </Button>
-                {toolResult && renderToolResult()}
+                <ToolResults
+                  toolResult={toolResult}
+                  selectedTool={selectedTool}
+                />
               </div>
             ) : (
               <Alert>
