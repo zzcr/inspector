@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { DebugInspectorOAuthClientProvider } from "../lib/auth";
 import { AlertCircle } from "lucide-react";
@@ -60,6 +60,23 @@ const AuthDebugger = ({
   authState,
   updateAuthState,
 }: AuthDebuggerProps) => {
+  // Initialize loading state
+  useEffect(() => {
+    if (authState.loading && serverUrl) {
+      // Check if we have existing tokens
+      const checkTokens = async () => {
+        const provider = new DebugInspectorOAuthClientProvider(serverUrl);
+        const existingTokens = await provider.tokens();
+        
+        updateAuthState({
+          loading: false,
+          oauthTokens: existingTokens || null,
+        });
+      };
+      
+      checkTokens();
+    }
+  }, [serverUrl, authState.loading, updateAuthState]);
   const startOAuthFlow = useCallback(() => {
     if (!serverUrl) {
       updateAuthState({

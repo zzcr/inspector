@@ -128,7 +128,7 @@ export const OAuthFlowProgress = ({
           label="Metadata Discovery"
           {...getStepProps("metadata_discovery")}
         >
-          {provider.getServerMetadata() && (
+          {authState.oauthMetadata && (
             <details className="text-xs mt-2">
               <summary className="cursor-pointer text-muted-foreground font-medium">
                 OAuth Metadata Sources
@@ -165,14 +165,14 @@ export const OAuthFlowProgress = ({
                 </div>
               )}
 
-              {provider.getServerMetadata() && (
+              {authState.oauthMetadata && (
                 <div className="mt-2">
                   <p className="font-medium">Authorization Server Metadata:</p>
                   {authState.authServerUrl && <p className="text-xs text-muted-foreground">
                     From {new URL('/.well-known/oauth-authorization-server', authState.authServerUrl).href}
                   </p>}
                   <pre className="mt-2 p-2 bg-muted rounded-md overflow-auto max-h-[300px]">
-                    {JSON.stringify(provider.getServerMetadata(), null, 2)}
+                    {JSON.stringify(authState.oauthMetadata, null, 2)}
                   </pre>
                 </div>
               )}
