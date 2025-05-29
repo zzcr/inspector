@@ -64,18 +64,22 @@ const AuthDebugger = ({
   useEffect(() => {
     if (serverUrl && !authState.oauthTokens) {
       const checkTokens = async () => {
-        const provider = new DebugInspectorOAuthClientProvider(serverUrl);
-        const existingTokens = await provider.tokens();
-        if (existingTokens) {
-          updateAuthState({
-            oauthTokens: existingTokens,
-            oauthStep: "complete",
-          });
+        try {
+          const provider = new DebugInspectorOAuthClientProvider(serverUrl);
+          const existingTokens = await provider.tokens();
+          if (existingTokens) {
+            updateAuthState({
+              oauthTokens: existingTokens,
+              oauthStep: "complete",
+            });
+          }
+        } catch (error) {
+          console.error("Failed to load existing OAuth tokens:", error);
         }
       };
       checkTokens();
     }
-  }, [serverUrl]); // Only run when serverUrl changes
+  }, [serverUrl, updateAuthState, authState.oauthTokens]);
 
   const startOAuthFlow = useCallback(() => {
     if (!serverUrl) {

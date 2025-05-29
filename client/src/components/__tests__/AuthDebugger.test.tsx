@@ -202,7 +202,7 @@ describe("AuthDebugger", () => {
 
       // Should first discover and save OAuth metadata
       expect(mockDiscoverOAuthMetadata).toHaveBeenCalledWith(
-        "https://example.com",
+        new URL("https://example.com"),
       );
 
       // Check that updateAuthState was called with the right info message
@@ -314,6 +314,11 @@ describe("AuthDebugger", () => {
       });
 
       expect(updateAuthState).toHaveBeenCalledWith({
+        authServerUrl: null,
+        authorizationUrl: null,
+        isInitiatingAuth: false,
+        resourceMetadata: null,
+        resourceMetadataError: null,
         oauthTokens: null,
         oauthStep: "metadata_discovery",
         latestError: null,
@@ -355,7 +360,7 @@ describe("AuthDebugger", () => {
       });
 
       expect(mockDiscoverOAuthMetadata).toHaveBeenCalledWith(
-        "https://example.com",
+        new URL("https://example.com"),
       );
     });
 
