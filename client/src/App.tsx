@@ -20,6 +20,7 @@ import {
 import { OAuthTokensSchema } from "@modelcontextprotocol/sdk/shared/auth.js";
 import { SESSION_KEYS, getServerSpecificKey } from "./lib/constants";
 import { AuthDebuggerState } from "./lib/auth-types";
+import { cacheToolOutputSchemas } from "./utils/schemaUtils";
 import React, {
   Suspense,
   useCallback,
@@ -234,7 +235,6 @@ const App = () => {
   const onOAuthConnect = useCallback(
     (serverUrl: string) => {
       setSseUrl(serverUrl);
-      setTransportType("sse");
       setIsAuthDebuggerVisible(false);
       void connectMcpServer();
     },
@@ -474,6 +474,8 @@ const App = () => {
     );
     setTools(response.tools);
     setNextToolCursor(response.nextCursor);
+    // Cache output schemas for validation
+    cacheToolOutputSchemas(response.tools);
   };
 
   const callTool = async (name: string, params: Record<string, unknown>) => {
@@ -760,6 +762,8 @@ const App = () => {
                       clearTools={() => {
                         setTools([]);
                         setNextToolCursor(undefined);
+                        // Clear cached output schemas
+                        cacheToolOutputSchemas([]);
                       }}
                       callTool={async (name, params) => {
                         clearError("tools");
