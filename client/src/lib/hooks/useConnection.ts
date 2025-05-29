@@ -2,8 +2,12 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import {
   SSEClientTransport,
   SseError,
+  SSEClientTransportOptions,
 } from "@modelcontextprotocol/sdk/client/sse.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import {
+  StreamableHTTPClientTransport,
+  StreamableHTTPClientTransportOptions,
+} from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import {
   ClientNotification,
   ClientRequest,
@@ -27,7 +31,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { RequestOptions } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/lib/hooks/useToast";
 import { z } from "zod";
 import { ConnectionStatus } from "../constants";
 import { Notification, StdErrNotificationSchema } from "../notificationTypes";
@@ -245,9 +249,16 @@ export function useConnection({
     }
   };
 
+  const is401Error = (error: unknown): boolean => {
+    return (
+      (error instanceof SseError && error.code === 401) ||
+      (error instanceof Error && error.message.includes("401")) ||
+      (error instanceof Error && error.message.includes("Unauthorized"))
+    );
+  };
+
   const handleAuthError = async (error: unknown) => {
-    if (error instanceof SseError && error.code === 401) {
-      // Create a new auth provider with the current server URL
+    if (is401Error(error)) {
       const serverAuthProvider = new InspectorOAuthClientProvider(sseUrl);
 
       const result = await auth(serverAuthProvider, { serverUrl: sseUrl });
@@ -279,29 +290,6 @@ export function useConnection({
       setConnectionStatus("error-connecting-to-proxy");
       return;
     }
-    let mcpProxyServerUrl;
-    switch (transportType) {
-      case "stdio":
-        mcpProxyServerUrl = new URL(`${getMCPProxyAddress(config)}/stdio`);
-        mcpProxyServerUrl.searchParams.append("command", command);
-        mcpProxyServerUrl.searchParams.append("args", args);
-        mcpProxyServerUrl.searchParams.append("env", JSON.stringify(env));
-        break;
-
-      case "sse":
-        mcpProxyServerUrl = new URL(`${getMCPProxyAddress(config)}/sse`);
-        mcpProxyServerUrl.searchParams.append("url", sseUrl);
-        break;
-
-      case "streamable-http":
-        mcpProxyServerUrl = new URL(`${getMCPProxyAddress(config)}/mcp`);
-        mcpProxyServerUrl.searchParams.append("url", sseUrl);
-        break;
-    }
-    (mcpProxyServerUrl as URL).searchParams.append(
-      "transportType",
-      transportType,
-    );
 
     try {
       // Inject auth manually instead of using SSEClientTransport, because we're
@@ -320,21 +308,80 @@ export function useConnection({
       }
 
       // Create appropriate transport
-      const transportOptions = {
-        eventSourceInit: {
-          fetch: (
-            url: string | URL | globalThis.Request,
-            init: RequestInit | undefined,
-          ) => fetch(url, { ...init, headers }),
-        },
-        requestInit: {
-          headers,
-        },
-      };
+      let transportOptions:
+        | StreamableHTTPClientTransportOptions
+        | SSEClientTransportOptions;
+
+      let mcpProxyServerUrl;
+      switch (transportType) {
+        case "stdio":
+          mcpProxyServerUrl = new URL(`${getMCPProxyAddress(config)}/stdio`);
+          mcpProxyServerUrl.searchParams.append("command", command);
+          mcpProxyServerUrl.searchParams.append("args", args);
+          mcpProxyServerUrl.searchParams.append("env", JSON.stringify(env));
+          transportOptions = {
+            authProvider: serverAuthProvider,
+            eventSourceInit: {
+              fetch: (
+                url: string | URL | globalThis.Request,
+                init: RequestInit | undefined,
+              ) => fetch(url, { ...init, headers }),
+            },
+            requestInit: {
+              headers,
+            },
+          };
+          break;
+
+        case "sse":
+          mcpProxyServerUrl = new URL(`${getMCPProxyAddress(config)}/sse`);
+          mcpProxyServerUrl.searchParams.append("url", sseUrl);
+          transportOptions = {
+            eventSourceInit: {
+              fetch: (
+                url: string | URL | globalThis.Request,
+                init: RequestInit | undefined,
+              ) => fetch(url, { ...init, headers }),
+            },
+            requestInit: {
+              headers,
+            },
+          };
+          break;
+
+        case "streamable-http":
+          mcpProxyServerUrl = new URL(`${getMCPProxyAddress(config)}/mcp`);
+          mcpProxyServerUrl.searchParams.append("url", sseUrl);
+          transportOptions = {
+            eventSourceInit: {
+              fetch: (
+                url: string | URL | globalThis.Request,
+                init: RequestInit | undefined,
+              ) => fetch(url, { ...init, headers }),
+            },
+            requestInit: {
+              headers,
+            },
+            // TODO these should be configurable...
+            reconnectionOptions: {
+              maxReconnectionDelay: 30000,
+              initialReconnectionDelay: 1000,
+              reconnectionDelayGrowFactor: 1.5,
+              maxRetries: 2,
+            },
+          };
+          break;
+      }
+      (mcpProxyServerUrl as URL).searchParams.append(
+        "transportType",
+        transportType,
+      );
+
       const clientTransport =
         transportType === "streamable-http"
           ? new StreamableHTTPClientTransport(mcpProxyServerUrl as URL, {
               sessionId: undefined,
+              ...transportOptions,
             })
           : new SSEClientTransport(mcpProxyServerUrl as URL, transportOptions);
 
@@ -383,13 +430,14 @@ export function useConnection({
           `Failed to connect to MCP Server via the MCP Inspector Proxy: ${mcpProxyServerUrl}:`,
           error,
         );
+
         const shouldRetry = await handleAuthError(error);
         if (shouldRetry) {
           return connect(undefined, retryCount + 1);
         }
-
-        if (error instanceof SseError && error.code === 401) {
+        if (is401Error(error)) {
           // Don't set error state if we're about to redirect for auth
+
           return;
         }
         throw error;
