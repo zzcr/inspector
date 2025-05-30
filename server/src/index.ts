@@ -70,8 +70,9 @@ const getHttpHeaders = (
   // If the header "x-custom-auth-header" is present, use its value as the custom header name.
   if (req.headers["x-custom-auth-header"] !== undefined) {
     const customHeaderName = req.headers["x-custom-auth-header"] as string;
-    if (req.headers[customHeaderName] !== undefined) {
-      const value = req.headers[customHeaderName];
+    const lowerCaseHeaderName = customHeaderName.toLowerCase();
+    if (req.headers[lowerCaseHeaderName] !== undefined) {
+      const value = req.headers[lowerCaseHeaderName];
       headers[customHeaderName] = value as string;
     }
   }
