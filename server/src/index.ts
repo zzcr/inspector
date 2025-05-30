@@ -259,7 +259,7 @@ app.get("/stdio", async (req, res) => {
     } catch (error) {
       if (error instanceof SseError && error.code === 401) {
         console.error(
-          "Received 401 Unauthorized from MCP server. Authentication failure."
+          "Received 401 Unauthorized from MCP server. Authentication failure.",
         );
         res.status(401).json(error);
         return;
@@ -305,7 +305,6 @@ app.get("/stdio", async (req, res) => {
       transportToClient: webAppTransport,
       transportToServer: serverTransport,
     });
-
   } catch (error) {
     console.error("Error in /stdio route:", error);
     res.status(500).json(error);
@@ -323,7 +322,7 @@ app.get("/sse", async (req, res) => {
     } catch (error) {
       if (error instanceof SseError && error.code === 401) {
         console.error(
-          "Received 401 Unauthorized from MCP server. Authentication failure."
+          "Received 401 Unauthorized from MCP server. Authentication failure.",
         );
         res.status(401).json(error);
         return;
@@ -333,7 +332,7 @@ app.get("/sse", async (req, res) => {
         );
         res.status(404).json(error);
         return;
-    } else if (JSON.stringify(error).includes("ECONNREFUSED")) {
+      } else if (JSON.stringify(error).includes("ECONNREFUSED")) {
         console.error("Connection refused. Is the MCP server running?");
         res.status(500).json(error);
       } else {
@@ -355,7 +354,6 @@ app.get("/sse", async (req, res) => {
         transportToServer: serverTransport,
       });
     }
-
   } catch (error) {
     console.error("Error in /sse route:", error);
     res.status(500).json(error);

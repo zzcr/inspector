@@ -6,10 +6,11 @@ function onClientError(error: Error) {
 }
 
 function onServerError(error: Error) {
- if (
-   (error?.message && error.message.includes("Error POSTing to endpoint (HTTP 404)")) ||
-   (error?.cause && JSON.stringify(error.cause).includes('ECONNREFUSED'))
-   ) {
+  if (
+    (error?.message &&
+      error.message.includes("Error POSTing to endpoint (HTTP 404)")) ||
+    (error?.cause && JSON.stringify(error.cause).includes("ECONNREFUSED"))
+  ) {
     console.error("Connection refused. Is the MCP server running?");
   } else {
     console.error("Error from MCP server:", error);
