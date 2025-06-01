@@ -19,6 +19,16 @@ Note that the proxy is not a network proxy for intercepting traffic. Instead, it
 
 - Node.js: ^22.7.5
 
+### Quick Start (UI mode)
+
+To get up and running right away with the UI, just execute the following:
+
+```bash
+npx @modelcontextprotocol/inspector
+```
+
+The server will start up and the UI will be accessible at `http://localhost:6274`.
+
 ### From an MCP server repository
 
 To inspect an MCP server implementation, there's no need to clone this repo. Instead, use `npx`. For example, if your server is built at `build/index.js`:
