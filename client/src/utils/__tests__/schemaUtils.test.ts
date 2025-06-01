@@ -12,24 +12,30 @@ import type { Tool } from "@modelcontextprotocol/sdk/types.js";
 describe("generateDefaultValue", () => {
   test("generates default string", () => {
     const parentSchema = { type: "object" as const, required: ["testProp"] };
-    expect(generateDefaultValue({ type: "string" }, "testProp", parentSchema)).toBe("");
+    expect(
+      generateDefaultValue({ type: "string" }, "testProp", parentSchema),
+    ).toBe("");
   });
 
   test("generates default number", () => {
     const parentSchema = { type: "object" as const, required: ["testProp"] };
-    expect(generateDefaultValue({ type: "number" }, "testProp", parentSchema)).toBe(0);
+    expect(
+      generateDefaultValue({ type: "number" }, "testProp", parentSchema),
+    ).toBe(0);
   });
 
   test("generates default integer", () => {
     const parentSchema = { type: "object" as const, required: ["testProp"] };
-    expect(generateDefaultValue({ type: "integer" }, "testProp", parentSchema)).toBe(0);
+    expect(
+      generateDefaultValue({ type: "integer" }, "testProp", parentSchema),
+    ).toBe(0);
   });
 
   test("generates default boolean", () => {
     const parentSchema = { type: "object" as const, required: ["testProp"] };
-    expect(generateDefaultValue({ type: "boolean" }, "testProp", parentSchema)).toBe(
-      false,
-    );
+    expect(
+      generateDefaultValue({ type: "boolean" }, "testProp", parentSchema),
+    ).toBe(false);
   });
 
   test("generates default array", () => {
@@ -37,40 +43,26 @@ describe("generateDefaultValue", () => {
   });
 
   test("generates default empty object", () => {
-    expect(generateDefaultValue({ type: "object" })).toEqual(
-      {},
-    );
+    expect(generateDefaultValue({ type: "object" })).toEqual({});
   });
 
   test("generates default null for unknown types", () => {
     // @ts-expect-error Testing with invalid type
-    expect(generateDefaultValue({ type: "unknown" })).toBe(
-      undefined,
-    );
+    expect(generateDefaultValue({ type: "unknown" })).toBe(undefined);
   });
 
   test("generates empty array for non-required array", () => {
-    expect(generateDefaultValue({ type: "array" })).toEqual(
-      [],
-    );
+    expect(generateDefaultValue({ type: "array" })).toEqual([]);
   });
 
   test("generates empty object for non-required object", () => {
-    expect(generateDefaultValue({ type: "object" })).toEqual(
-      {},
-    );
+    expect(generateDefaultValue({ type: "object" })).toEqual({});
   });
 
   test("generates undefined for non-required primitive types", () => {
-    expect(generateDefaultValue({ type: "string" })).toBe(
-      undefined,
-    );
-    expect(generateDefaultValue({ type: "number" })).toBe(
-      undefined,
-    );
-    expect(generateDefaultValue({ type: "boolean" })).toBe(
-      undefined,
-    );
+    expect(generateDefaultValue({ type: "string" })).toBe(undefined);
+    expect(generateDefaultValue({ type: "number" })).toBe(undefined);
+    expect(generateDefaultValue({ type: "boolean" })).toBe(undefined);
   });
 
   test("generates object with properties", () => {
