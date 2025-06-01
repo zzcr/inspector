@@ -7,7 +7,7 @@ import { TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import DynamicJsonForm from "./DynamicJsonForm";
 import type { JsonValue, JsonSchemaType } from "@/utils/jsonUtils";
-import { generateDefaultValue } from "@/utils/schemaUtils";
+import { generateDefaultValue, isPropertyRequired } from "@/utils/schemaUtils";
 import {
   CompatibilityCallToolResult,
   ListToolsResult,
@@ -48,7 +48,7 @@ const ToolsTab = ({
       selectedTool?.inputSchema.properties ?? [],
     ).map(([key, value]) => [
       key,
-      generateDefaultValue(value as JsonSchemaType),
+      generateDefaultValue(value as JsonSchemaType, key, selectedTool?.inputSchema as JsonSchemaType),
     ]);
     setParams(Object.fromEntries(params));
   }, [selectedTool]);
@@ -92,13 +92,15 @@ const ToolsTab = ({
                 {Object.entries(selectedTool.inputSchema.properties ?? []).map(
                   ([key, value]) => {
                     const prop = value as JsonSchemaType;
+                    const inputSchema = selectedTool.inputSchema as JsonSchemaType;
+                    const required = isPropertyRequired(key, inputSchema);
                     return (
                       <div key={key}>
                         <Label
                           htmlFor={key}
                           className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                         >
-                          {key}
+                          {key}{required && <span className="text-red-500 ml-1">*</span>}
                         </Label>
                         {prop.type === "boolean" ? (
                           <div className="flex items-center space-x-2 mt-2">
