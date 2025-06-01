@@ -88,14 +88,15 @@ export function hasOutputSchema(toolName: string): boolean {
 export function generateDefaultValue(
   schema: JsonSchemaType,
   propertyName?: string,
-  parentSchema?: JsonSchemaType
+  parentSchema?: JsonSchemaType,
 ): JsonValue {
   if ("default" in schema && schema.default !== undefined) {
     return schema.default;
   }
 
   // Check if this property is required in the parent schema
-  const isRequired = parentSchema?.required?.includes(propertyName || "") ?? false;
+  const isRequired =
+    parentSchema?.required?.includes(propertyName || "") ?? false;
 
   switch (schema.type) {
     case "string":
@@ -136,7 +137,10 @@ export function generateDefaultValue(
  * @param schema The parent schema containing the required array
  * @returns true if the property is required, false otherwise
  */
-export function isPropertyRequired(propertyName: string, schema: JsonSchemaType): boolean {
+export function isPropertyRequired(
+  propertyName: string,
+  schema: JsonSchemaType,
+): boolean {
   return schema.required?.includes(propertyName) ?? false;
 }
 

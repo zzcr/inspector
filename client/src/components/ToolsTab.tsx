@@ -48,7 +48,11 @@ const ToolsTab = ({
       selectedTool?.inputSchema.properties ?? [],
     ).map(([key, value]) => [
       key,
-      generateDefaultValue(value as JsonSchemaType, key, selectedTool?.inputSchema as JsonSchemaType),
+      generateDefaultValue(
+        value as JsonSchemaType,
+        key,
+        selectedTool?.inputSchema as JsonSchemaType,
+      ),
     ]);
     setParams(Object.fromEntries(params));
   }, [selectedTool]);
@@ -92,7 +96,8 @@ const ToolsTab = ({
                 {Object.entries(selectedTool.inputSchema.properties ?? []).map(
                   ([key, value]) => {
                     const prop = value as JsonSchemaType;
-                    const inputSchema = selectedTool.inputSchema as JsonSchemaType;
+                    const inputSchema =
+                      selectedTool.inputSchema as JsonSchemaType;
                     const required = isPropertyRequired(key, inputSchema);
                     return (
                       <div key={key}>
@@ -100,7 +105,10 @@ const ToolsTab = ({
                           htmlFor={key}
                           className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                         >
-                          {key}{required && <span className="text-red-500 ml-1">*</span>}
+                          {key}
+                          {required && (
+                            <span className="text-red-500 ml-1">*</span>
+                          )}
                         </Label>
                         {prop.type === "boolean" ? (
                           <div className="flex items-center space-x-2 mt-2">

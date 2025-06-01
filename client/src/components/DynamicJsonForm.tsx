@@ -124,7 +124,8 @@ const DynamicJsonForm = ({
       return (
         <JsonEditor
           value={JSON.stringify(
-            currentValue ?? generateDefaultValue(propSchema, propertyName, parentSchema),
+            currentValue ??
+              generateDefaultValue(propSchema, propertyName, parentSchema),
             null,
             2,
           )}
@@ -143,7 +144,8 @@ const DynamicJsonForm = ({
     }
 
     // Check if this property is required in the parent schema
-    const isRequired = parentSchema?.required?.includes(propertyName || "") ?? false;
+    const isRequired =
+      parentSchema?.required?.includes(propertyName || "") ?? false;
 
     switch (propSchema.type) {
       case "string":
@@ -223,14 +225,16 @@ const DynamicJsonForm = ({
                   handleFieldChange(path, parsed);
                   setJsonError(undefined);
                 } catch (err) {
-                  setJsonError(err instanceof Error ? err.message : "Invalid JSON");
+                  setJsonError(
+                    err instanceof Error ? err.message : "Invalid JSON",
+                  );
                 }
               }}
               error={jsonError}
             />
           );
         }
-        
+
         return (
           <div className="space-y-2 border rounded p-3">
             {Object.entries(propSchema.properties).map(([key, subSchema]) => (
@@ -263,7 +267,9 @@ const DynamicJsonForm = ({
                 handleFieldChange(path, parsed);
                 setJsonError(undefined);
               } catch (err) {
-                setJsonError(err instanceof Error ? err.message : "Invalid JSON");
+                setJsonError(
+                  err instanceof Error ? err.message : "Invalid JSON",
+                );
               }
             }}
             error={jsonError}
