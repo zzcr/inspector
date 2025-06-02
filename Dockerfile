@@ -14,12 +14,10 @@ RUN npm install --no-package-lock
 # Build the application
 RUN npm run build
 
-ENV CLIENT_PORT=6274
-ENV SERVER_PORT=6277
+ARG CLIENT_PORT=6274
+ARG SERVER_PORT=6277
 
-# Expose the CLIENT_PORT and SERVER_PORT
-EXPOSE $CLIENT_PORT
-EXPOSE $SERVER_PORT
+EXPOSE ${CLIENT_PORT} ${SERVER_PORT}
 
 # Use ENTRYPOINT with CMD for arguments
 ENTRYPOINT ["npm", "start"]
