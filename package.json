@@ -36,6 +36,7 @@
     "test-cli": "cd cli && npm run test",
     "prettier-fix": "prettier --write .",
     "prettier-check": "prettier --check .",
+    "lint": "prettier --check . && cd client && npm run lint",
     "prepare": "npm run build",
     "publish-all": "npm publish --workspaces --access public && npm publish --access public"
   },

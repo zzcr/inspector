@@ -441,8 +441,16 @@ describe("AuthDebugger", () => {
       const updateAuthState = jest.fn();
 
       // Mock window.location.href setter
-      delete (window as any).location;
-      window.location = { href: "" } as any;
+      const originalLocation = window.location;
+      const locationMock = {
+        ...originalLocation,
+        href: "",
+        origin: "http://localhost:3000"
+      };
+      Object.defineProperty(window, 'location', {
+        writable: true,
+        value: locationMock
+      });
 
       // Setup mocks for OAuth flow
       mockStartAuthorization.mockResolvedValue({

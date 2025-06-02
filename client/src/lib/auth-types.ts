@@ -29,10 +29,7 @@ export interface AuthDebuggerState {
   oauthTokens: OAuthTokens | null;
   oauthStep: OAuthStep;
   resourceMetadata: OAuthProtectedResourceMetadata | null;
-  resourceMetadataError:
-    | Error
-    | { status: number; statusText: string; message: string }
-    | null;
+  resourceMetadataError: Error | null;
   authServerUrl: URL | null;
   oauthMetadata: OAuthMetadata | null;
   oauthClientInfo: OAuthClientInformationFull | OAuthClientInformation | null;
