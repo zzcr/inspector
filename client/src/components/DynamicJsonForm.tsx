@@ -31,7 +31,7 @@ const getArrayItemDefault = (schema: JsonSchemaType): JsonValue => {
   if ("default" in schema && schema.default !== undefined) {
     return schema.default;
   }
-  
+
   switch (schema.type) {
     case "string":
       return "";
@@ -289,13 +289,15 @@ const DynamicJsonForm = ({
       case "array": {
         const arrayValue = Array.isArray(currentValue) ? currentValue : [];
         if (!propSchema.items) return null;
-        
+
         // If the array items are simple, render as form fields, otherwise use JSON editor
         if (isSimpleObject(propSchema.items)) {
           return (
             <div className="space-y-4">
               {propSchema.description && (
-                <p className="text-sm text-gray-600">{propSchema.description}</p>
+                <p className="text-sm text-gray-600">
+                  {propSchema.description}
+                </p>
               )}
 
               {propSchema.items?.description && (
@@ -333,10 +335,7 @@ const DynamicJsonForm = ({
                     const defaultValue = getArrayItemDefault(
                       propSchema.items as JsonSchemaType,
                     );
-                    handleFieldChange(path, [
-                      ...arrayValue,
-                      defaultValue,
-                    ]);
+                    handleFieldChange(path, [...arrayValue, defaultValue]);
                   }}
                   title={
                     propSchema.items?.description
@@ -350,7 +349,7 @@ const DynamicJsonForm = ({
             </div>
           );
         }
-        
+
         // For complex arrays, fall back to JSON editor
         return (
           <JsonEditor
