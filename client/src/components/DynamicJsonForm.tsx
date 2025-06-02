@@ -16,10 +16,39 @@ interface DynamicJsonFormProps {
 const isSimpleObject = (schema: JsonSchemaType): boolean => {
   const supportedTypes = ["string", "number", "integer", "boolean", "null"];
   if (supportedTypes.includes(schema.type)) return true;
-  if (schema.type !== "object") return false;
-  return Object.values(schema.properties ?? {}).every((prop) =>
-    supportedTypes.includes(prop.type),
-  );
+  if (schema.type === "object") {
+    return Object.values(schema.properties ?? {}).every((prop) =>
+      supportedTypes.includes(prop.type),
+    );
+  }
+  if (schema.type === "array") {
+    return !!schema.items && isSimpleObject(schema.items);
+  }
+  return false;
+};
+
+const getArrayItemDefault = (schema: JsonSchemaType): JsonValue => {
+  if ("default" in schema && schema.default !== undefined) {
+    return schema.default;
+  }
+  
+  switch (schema.type) {
+    case "string":
+      return "";
+    case "number":
+    case "integer":
+      return 0;
+    case "boolean":
+      return false;
+    case "array":
+      return [];
+    case "object":
+      return {};
+    case "null":
+      return null;
+    default:
+      return null;
+  }
 };
 
 const DynamicJsonForm = ({
@@ -257,7 +286,72 @@ const DynamicJsonForm = ({
             ))}
           </div>
         );
-      case "array":
+      case "array": {
+        const arrayValue = Array.isArray(currentValue) ? currentValue : [];
+        if (!propSchema.items) return null;
+        
+        // If the array items are simple, render as form fields, otherwise use JSON editor
+        if (isSimpleObject(propSchema.items)) {
+          return (
+            <div className="space-y-4">
+              {propSchema.description && (
+                <p className="text-sm text-gray-600">{propSchema.description}</p>
+              )}
+
+              {propSchema.items?.description && (
+                <p className="text-sm text-gray-500">
+                  Items: {propSchema.items.description}
+                </p>
+              )}
+
+              <div className="space-y-2">
+                {arrayValue.map((item, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    {renderFormFields(
+                      propSchema.items as JsonSchemaType,
+                      item,
+                      [...path, index.toString()],
+                      depth + 1,
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const newArray = [...arrayValue];
+                        newArray.splice(index, 1);
+                        handleFieldChange(path, newArray);
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const defaultValue = getArrayItemDefault(
+                      propSchema.items as JsonSchemaType,
+                    );
+                    handleFieldChange(path, [
+                      ...arrayValue,
+                      defaultValue,
+                    ]);
+                  }}
+                  title={
+                    propSchema.items?.description
+                      ? `Add new ${propSchema.items.description}`
+                      : "Add new item"
+                  }
+                >
+                  Add Item
+                </Button>
+              </div>
+            </div>
+          );
+        }
+        
+        // For complex arrays, fall back to JSON editor
         return (
           <JsonEditor
             value={JSON.stringify(currentValue ?? [], null, 2)}
@@ -275,6 +369,7 @@ const DynamicJsonForm = ({
             error={jsonError}
           />
         );
+      }
       default:
         return null;
     }
