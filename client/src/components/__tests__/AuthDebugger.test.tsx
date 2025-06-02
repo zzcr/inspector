@@ -445,11 +445,11 @@ describe("AuthDebugger", () => {
       const locationMock = {
         ...originalLocation,
         href: "",
-        origin: "http://localhost:3000"
+        origin: "http://localhost:3000",
       };
-      Object.defineProperty(window, 'location', {
+      Object.defineProperty(window, "location", {
         writable: true,
-        value: locationMock
+        value: locationMock,
       });
 
       // Setup mocks for OAuth flow
