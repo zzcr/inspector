@@ -43,8 +43,6 @@ export const oauthTransitions: Record<OAuthStep, StateTransition> = {
           authServerUrl = new URL(resourceMetadata.authorization_servers[0]);
         }
       } catch (e) {
-        console.info(`Failed to find protected resource metadata: ${e}`);
-        console.log(e);
         if (e instanceof Error) {
           resourceMetadataError = e;
         } else {

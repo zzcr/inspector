@@ -104,6 +104,9 @@ describe("AuthDebugger", () => {
     jest.clearAllMocks();
     sessionStorageMock.getItem.mockReturnValue(null);
 
+    // Supress
+    jest.spyOn(console, "error").mockImplementation(() => {});
+
     mockDiscoverOAuthMetadata.mockResolvedValue(mockOAuthMetadata);
     mockRegisterClient.mockResolvedValue(mockOAuthClientInfo);
     mockDiscoverOAuthProtectedResourceMetadata.mockRejectedValue(
@@ -122,6 +125,10 @@ describe("AuthDebugger", () => {
       };
     });
     mockExchangeAuthorization.mockResolvedValue(mockOAuthTokens);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   const renderAuthDebugger = (props: Partial<AuthDebuggerProps> = {}) => {
