@@ -307,7 +307,7 @@ const App = () => {
         });
       }
     },
-    [],
+    [sseUrl],
   );
 
   // Load OAuth tokens when sseUrl changes
