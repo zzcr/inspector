@@ -197,7 +197,7 @@ app.post("/mcp", async (req, res) => {
         onsessioninitialized: (sessionId) => {
           webAppTransports.set(sessionId, webAppTransport);
           serverTransports.set(sessionId, serverTransport!);
-          console.log("New client <-> proxy server sessionId: " + sessionId);
+          console.log("Client <-> Proxy  sessionId: " + sessionId);
         },
       });
       console.log("Created StreamableHttp client transport");

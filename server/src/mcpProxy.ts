@@ -27,6 +27,8 @@ export default function mcpProxy({
   let transportToClientClosed = false;
   let transportToServerClosed = false;
 
+  let reportedServerSession = false;
+
   transportToClient.onmessage = (message) => {
     transportToServer.send(message).catch((error) => {
       // Send error response back to client if it was a request (has id) and connection is still open
@@ -46,6 +48,15 @@ export default function mcpProxy({
   };
 
   transportToServer.onmessage = (message) => {
+    if (!reportedServerSession) {
+      if (transportToServer.sessionId) {
+        // Can only report for StreamableHttp
+        console.error(
+          "Proxy  <-> Server sessionId: " + transportToServer.sessionId,
+        );
+      }
+      reportedServerSession = true;
+    }
     transportToClient.send(message).catch(onClientError);
   };
 
