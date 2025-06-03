@@ -72,9 +72,13 @@ export const oauthTransitions: Record<OAuthStep, StateTransition> = {
       const metadata = context.state.oauthMetadata!;
       const clientMetadata = context.provider.clientMetadata;
 
+      // Prefer scopes from resource metadata if available
+      const scopesSupported =
+        context.state.resourceMetadata?.scopes_supported ||
+        metadata.scopes_supported;
       // Add all supported scopes to client registration
-      if (metadata.scopes_supported) {
-        clientMetadata.scope = metadata.scopes_supported.join(" ");
+      if (scopesSupported) {
+        clientMetadata.scope = scopesSupported.join(" ");
       }
 
       const fullInformation = await registerClient(context.serverUrl, {
