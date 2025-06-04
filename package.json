@@ -34,12 +34,12 @@
     "start-client": "cd client && npm run preview",
     "test": "npm run prettier-check && cd client && npm test",
     "test-cli": "cd cli && npm run test",
+    "test:e2e": "npm run test:e2e --workspace=client",
     "prettier-fix": "prettier --write .",
     "prettier-check": "prettier --check .",
     "lint": "prettier --check . && cd client && npm run lint",
     "prepare": "npm run build",
-    "publish-all": "npm publish --workspaces --access public && npm publish --access public",
-    "test:e2e": "npm run test:e2e --workspace=client"
+    "publish-all": "npm publish --workspaces --access public && npm publish --access public"
   },
   "dependencies": {
     "@modelcontextprotocol/inspector-cli": "^0.14.0",
