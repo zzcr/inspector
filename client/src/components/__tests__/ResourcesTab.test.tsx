@@ -20,7 +20,12 @@ jest.mock("../JsonView", () => {
 });
 
 jest.mock("@/components/ui/combobox", () => ({
-  Combobox: ({ id, value, onChange, placeholder }: {
+  Combobox: ({
+    id,
+    value,
+    onChange,
+    placeholder,
+  }: {
     id: string;
     value: string;
     onChange: (value: string) => void;
@@ -37,7 +42,10 @@ jest.mock("@/components/ui/combobox", () => ({
 }));
 
 jest.mock("@/components/ui/label", () => ({
-  Label: ({ htmlFor, children }: {
+  Label: ({
+    htmlFor,
+    children,
+  }: {
     htmlFor: string;
     children: React.ReactNode;
   }) => (
@@ -48,7 +56,12 @@ jest.mock("@/components/ui/label", () => ({
 }));
 
 jest.mock("@/components/ui/button", () => ({
-  Button: ({ children, onClick, disabled, ...props }: {
+  Button: ({
+    children,
+    onClick,
+    disabled,
+    ...props
+  }: {
     children: React.ReactNode;
     onClick?: () => void;
     disabled?: boolean;
@@ -139,7 +152,9 @@ describe("ResourcesTab - Template Query Parameters", () => {
     // Click on the resource template to select it
     fireEvent.click(screen.getByText("Users API"));
 
-    expect(screen.getByText("Fetch users with optional filtering and pagination")).toBeInTheDocument();
+    expect(
+      screen.getByText("Fetch users with optional filtering and pagination"),
+    ).toBeInTheDocument();
   });
 
   it("should handle template value changes", () => {
@@ -180,16 +195,18 @@ describe("ResourcesTab - Template Query Parameters", () => {
     // Click Read Resource button
     const readResourceButton = screen.getByText("Read Resource");
     expect(readResourceButton).not.toBeDisabled();
-    
+
     fireEvent.click(readResourceButton);
 
     // Verify that readResource was called with the expanded URI
-    expect(mockReadResource).toHaveBeenCalledWith("test://users?name=john&limit=10&offset=0");
-    
+    expect(mockReadResource).toHaveBeenCalledWith(
+      "test://users?name=john&limit=10&offset=0",
+    );
+
     // Verify that setSelectedResource was called with the expanded resource
     expect(mockSetSelectedResource).toHaveBeenCalledWith({
       uri: "test://users?name=john&limit=10&offset=0",
-      name: "test://users?name=john&limit=10&offset=0"
+      name: "test://users?name=john&limit=10&offset=0",
     });
   });
 
@@ -217,7 +234,7 @@ describe("ResourcesTab - Template Query Parameters", () => {
     // Read Resource button should be enabled with partial values
     const readResourceButton = screen.getByText("Read Resource");
     expect(readResourceButton).not.toBeDisabled();
-    
+
     fireEvent.click(readResourceButton);
 
     // Should expand with only the provided values
@@ -237,7 +254,9 @@ describe("ResourcesTab - Template Query Parameters", () => {
     fireEvent.click(screen.getByText("Read Resource"));
 
     // Should properly encode special characters
-    expect(mockReadResource).toHaveBeenCalledWith("test://users?name=john%20doe");
+    expect(mockReadResource).toHaveBeenCalledWith(
+      "test://users?name=john%20doe",
+    );
   });
 
   it("should clear template values when switching between templates", () => {
@@ -248,7 +267,7 @@ describe("ResourcesTab - Template Query Parameters", () => {
     };
 
     renderResourcesTab({
-      resourceTemplates: [mockResourceTemplate, anotherTemplate]
+      resourceTemplates: [mockResourceTemplate, anotherTemplate],
     });
 
     // Select first template and fill values
@@ -267,10 +286,10 @@ describe("ResourcesTab - Template Query Parameters", () => {
 
   it("should display resource content when a resource is selected", () => {
     const resourceContent = '{"users": [{"id": 1, "name": "John"}]}';
-    
+
     renderResourcesTab({
       selectedResource: mockResource,
-      resourceContent: resourceContent
+      resourceContent: resourceContent,
     });
 
     expect(screen.getByTestId("json-view")).toBeInTheDocument();
@@ -280,6 +299,10 @@ describe("ResourcesTab - Template Query Parameters", () => {
   it("should show alert when no resource or template is selected", () => {
     renderResourcesTab();
 
-    expect(screen.getByText("Select a resource or template from the list to view its contents")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Select a resource or template from the list to view its contents",
+      ),
+    ).toBeInTheDocument();
   });
 });
