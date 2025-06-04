@@ -1,0 +1,45 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [ main ] 
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest 
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18 
+
+      # Cache Playwright browsers
+      - name: Cache Playwright browsers
+        id: cache-playwright
+        uses: actions/cache@v4 
+        with:
+          path: ~/.cache/ms-playwright # The default Playwright cache path
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }} # Cache key based on OS and package-lock.json
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install dependencies
+        run: npm ci 
+
+      - name: Install Playwright and browsers unless cached
+        run: npx playwright install --with-deps
+        if: steps.cache-playwright.outputs.cache-hit != 'true' 
+
+      - name: Start Server
+        run: npm run start 
+
+      - name: Wait for server to start
+        run: npx wait-on http://localhost:6274
+
+      - name: Run Playwright tests
+        run: npm run test:e2e
