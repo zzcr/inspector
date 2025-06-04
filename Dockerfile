@@ -41,8 +41,12 @@ COPY --from=builder /app/client/bin ./client/bin
 COPY --from=builder /app/server/build ./server/build
 COPY --from=builder /app/cli/build ./cli/build
 
+# Set default port values as environment variables
+ENV CLIENT_PORT=6274
+ENV SERVER_PORT=6277
+
 # Document which ports the application uses internally
-EXPOSE 6274 6277
+EXPOSE ${CLIENT_PORT} ${SERVER_PORT}
 
 # Use ENTRYPOINT with CMD for arguments
 ENTRYPOINT ["npm", "start"]
