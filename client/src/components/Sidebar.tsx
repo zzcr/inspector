@@ -285,13 +285,20 @@ const Sidebar = ({
                 <label className="text-sm font-medium" htmlFor="sse-url-input">
                   URL
                 </label>
-                <Input
-                  id="sse-url-input"
-                  placeholder="URL"
-                  value={sseUrl}
-                  onChange={(e) => setSseUrl(e.target.value)}
-                  className="font-mono"
-                />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Input
+                      id="sse-url-input"
+                      placeholder="URL"
+                      value={sseUrl}
+                      onChange={(e) => setSseUrl(e.target.value)}
+                      className="font-mono"
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {sseUrl || `Enter URL to MCP server`}
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <div className="space-y-2">
                 <Button
