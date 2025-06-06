@@ -296,9 +296,7 @@ const Sidebar = ({
                         className="font-mono"
                       />
                     </TooltipTrigger>
-                    <TooltipContent>
-                      {sseUrl}
-                    </TooltipContent>
+                    <TooltipContent>{sseUrl}</TooltipContent>
                   </Tooltip>
                 ) : (
                   <Input
