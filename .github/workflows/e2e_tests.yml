@@ -60,4 +60,20 @@ jobs:
           path: |
             client/playwright-report/
             client/test-results/
+            client/results.json
           retention-days: 30
+
+      - name: Publish Playwright Test Summary
+        uses: daun/playwright-report-summary@v3
+        if: always()
+        with:
+          report-file: client/results.json
+          comment-title: "🎭 Playwright E2E Test Results"
+          job-summary: true
+          icon-style: "emojis"
+          custom-info: |
+            **Test Environment:** Ubuntu Latest, Node.js 18
+            **Browsers:** Chromium, Firefox
+
+            📊 [View Detailed HTML Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) (download artifacts)
+          test-command: "npm run test:e2e"
