@@ -28,8 +28,7 @@ export default defineConfig({
     trace: "on-first-retry",
 
     /* Take screenshots on failure */
-    screenshot: "on",
-    // screenshot: 'only-on-failure',
+    screenshot: "only-on-failure",
 
     /* Record video on failure */
     video: "retain-on-failure",
