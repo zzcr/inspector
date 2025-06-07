@@ -36,7 +36,7 @@ jobs:
         if: steps.cache-playwright.outputs.cache-hit != 'true'
 
       - name: Start Server
-        run: npm run start
+        run: npm run start &
 
       - name: Wait for server to start
         run: npx wait-on http://localhost:6274
