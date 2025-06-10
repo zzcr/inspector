@@ -54,4 +54,10 @@ export const DEFAULT_INSPECTOR_CONFIG: InspectorConfig = {
       "Set this if you are running the MCP Inspector Proxy on a non-default address. Example: http://10.1.1.22:5577",
     value: "",
   },
+  MCP_PROXY_AUTH_TOKEN: {
+    label: "Proxy Session Token",
+    description:
+      "Session token for authenticating with the MCP Proxy Server (displayed in proxy console on startup)",
+    value: "",
+  },
 } as const;

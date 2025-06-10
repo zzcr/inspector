@@ -33,4 +33,9 @@ export type InspectorConfig = {
    * The full address of the MCP Proxy Server, in case it is running on a non-default address. Example: http://10.1.1.22:5577
    */
   MCP_PROXY_FULL_ADDRESS: ConfigItem;
+
+  /**
+   * Session token for authenticating with the MCP Proxy Server. This token is displayed in the proxy server console on startup.
+   */
+  MCP_PROXY_AUTH_TOKEN: ConfigItem;
 };
