@@ -19,7 +19,7 @@ import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import express from "express";
 import { findActualExecutable } from "spawn-rx";
 import mcpProxy from "./mcpProxy.js";
-import { randomUUID } from "node:crypto";
+import { randomUUID, randomBytes } from "node:crypto";
 
 const SSE_HEADERS_PASSTHROUGH = ["authorization"];
 const STREAMABLE_HTTP_HEADERS_PASSTHROUGH = [
@@ -89,6 +89,25 @@ app.use((req, res, next) => {
 const webAppTransports: Map<string, Transport> = new Map<string, Transport>(); // Web app transports by web app sessionId
 const serverTransports: Map<string, Transport> = new Map<string, Transport>(); // Server Transports by web app sessionId
 
+const sessionToken = randomBytes(32).toString('hex');
+const authDisabled = !!process.env.DANGEROUSLY_OMIT_AUTH;
+
+const authMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (authDisabled) {
+    return next();
+  }
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader || authHeader !== `Bearer ${sessionToken}`) {
+    res.status(401).json({ 
+      error: "Unauthorized", 
+      message: "Authentication required. Use the session token shown in the console when starting the server."
+    });
+    return;
+  }
+  next();
+};
+
 const createTransport = async (req: express.Request): Promise<Transport> => {
   const query = req.query;
   console.log("Query parameters:", JSON.stringify(query));
@@ -150,7 +169,7 @@ const createTransport = async (req: express.Request): Promise<Transport> => {
   }
 };
 
-app.get("/mcp", async (req, res) => {
+app.get("/mcp", authMiddleware, async (req, res) => {
   const sessionId = req.headers["mcp-session-id"] as string;
   console.log(`Received GET message for sessionId ${sessionId}`);
   try {
@@ -169,7 +188,7 @@ app.get("/mcp", async (req, res) => {
   }
 });
 
-app.post("/mcp", async (req, res) => {
+app.post("/mcp", authMiddleware, async (req, res) => {
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
   let serverTransport: Transport | undefined;
   if (!sessionId) {
@@ -239,7 +258,7 @@ app.post("/mcp", async (req, res) => {
   }
 });
 
-app.delete("/mcp", async (req, res) => {
+app.delete("/mcp", authMiddleware, async (req, res) => {
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
   console.log(`Received DELETE message for sessionId ${sessionId}`);
   let serverTransport: Transport | undefined;
@@ -266,7 +285,7 @@ app.delete("/mcp", async (req, res) => {
   }
 });
 
-app.get("/stdio", async (req, res) => {
+app.get("/stdio", authMiddleware, async (req, res) => {
   try {
     console.log("New STDIO connection request");
     let serverTransport: Transport | undefined;
@@ -328,7 +347,7 @@ app.get("/stdio", async (req, res) => {
   }
 });
 
-app.get("/sse", async (req, res) => {
+app.get("/sse", authMiddleware, async (req, res) => {
   try {
     console.log(
       "New SSE connection request. NOTE: The sse transport is deprecated and has been replaced by StreamableHttp",
@@ -377,7 +396,7 @@ app.get("/sse", async (req, res) => {
   }
 });
 
-app.post("/message", async (req, res) => {
+app.post("/message", authMiddleware, async (req, res) => {
   try {
     const sessionId = req.query.sessionId;
     console.log(`Received POST message for sessionId ${sessionId}`);
@@ -421,6 +440,17 @@ const HOST = process.env.HOST || '127.0.0.1';
 const server = app.listen(PORT, HOST);
 server.on("listening", () => {
   console.log(`⚙️ Proxy server listening on ${HOST}:${PORT}`);
+  if (!authDisabled) {
+    console.log(`🔑 Session token: ${sessionToken}`);
+    console.log(`Use this token to authenticate requests or set DANGEROUSLY_OMIT_AUTH=true to disable auth`);
+    
+    // Display clickable URL with pre-filled token
+    const clientPort = process.env.CLIENT_PORT || '6274';
+    const clientUrl = `http://localhost:${clientPort}/?MCP_PROXY_AUTH_TOKEN=${sessionToken}`;
+    console.log(`\n🔗 Open inspector with token pre-filled:\n   ${clientUrl}`);
+  } else {
+    console.log(`⚠️  WARNING: Authentication is disabled. This is not recommended.`);
+  }
 });
 server.on("error", (err) => {
   if (err.message.includes(`EADDRINUSE`)) {
