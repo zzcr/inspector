@@ -92,6 +92,29 @@ const serverTransports: Map<string, Transport> = new Map<string, Transport>(); /
 const sessionToken = randomBytes(32).toString('hex');
 const authDisabled = !!process.env.DANGEROUSLY_OMIT_AUTH;
 
+// Origin validation middleware to prevent DNS rebinding attacks
+const originValidationMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const origin = req.headers.origin;
+  
+  // Default origins based on CLIENT_PORT or use environment variable
+  const clientPort = process.env.CLIENT_PORT || '6274';
+  const defaultOrigins = [
+    `http://localhost:${clientPort}`,
+    `http://127.0.0.1:${clientPort}`
+  ];
+  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || defaultOrigins;
+  
+  if (origin && !allowedOrigins.includes(origin)) {
+    console.error(`Invalid origin: ${origin}`);
+    res.status(403).json({ 
+      error: 'Forbidden - invalid origin', 
+      message: 'Request blocked to prevent DNS rebinding attacks. Configure allowed origins via environment variable.'
+    });
+    return;
+  }
+  next();
+};
+
 const authMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
   if (authDisabled) {
     return next();
@@ -169,7 +192,7 @@ const createTransport = async (req: express.Request): Promise<Transport> => {
   }
 };
 
-app.get("/mcp", authMiddleware, async (req, res) => {
+app.get("/mcp", originValidationMiddleware, authMiddleware, async (req, res) => {
   const sessionId = req.headers["mcp-session-id"] as string;
   console.log(`Received GET message for sessionId ${sessionId}`);
   try {
@@ -188,7 +211,7 @@ app.get("/mcp", authMiddleware, async (req, res) => {
   }
 });
 
-app.post("/mcp", authMiddleware, async (req, res) => {
+app.post("/mcp", originValidationMiddleware, authMiddleware, async (req, res) => {
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
   let serverTransport: Transport | undefined;
   if (!sessionId) {
@@ -258,7 +281,7 @@ app.post("/mcp", authMiddleware, async (req, res) => {
   }
 });
 
-app.delete("/mcp", authMiddleware, async (req, res) => {
+app.delete("/mcp", originValidationMiddleware, authMiddleware, async (req, res) => {
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
   console.log(`Received DELETE message for sessionId ${sessionId}`);
   let serverTransport: Transport | undefined;
@@ -285,7 +308,7 @@ app.delete("/mcp", authMiddleware, async (req, res) => {
   }
 });
 
-app.get("/stdio", authMiddleware, async (req, res) => {
+app.get("/stdio", originValidationMiddleware, authMiddleware, async (req, res) => {
   try {
     console.log("New STDIO connection request");
     let serverTransport: Transport | undefined;
@@ -347,7 +370,7 @@ app.get("/stdio", authMiddleware, async (req, res) => {
   }
 });
 
-app.get("/sse", authMiddleware, async (req, res) => {
+app.get("/sse", originValidationMiddleware, authMiddleware, async (req, res) => {
   try {
     console.log(
       "New SSE connection request. NOTE: The sse transport is deprecated and has been replaced by StreamableHttp",
@@ -396,7 +419,7 @@ app.get("/sse", authMiddleware, async (req, res) => {
   }
 });
 
-app.post("/message", authMiddleware, async (req, res) => {
+app.post("/message", originValidationMiddleware, authMiddleware, async (req, res) => {
   try {
     const sessionId = req.query.sessionId;
     console.log(`Received POST message for sessionId ${sessionId}`);

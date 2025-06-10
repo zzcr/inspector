@@ -176,6 +176,14 @@ HOST=0.0.0.0 npm start
 
 **Warning:** Only bind to all interfaces in trusted network environments, as this exposes the proxy server's ability to execute local processes.
 
+#### DNS Rebinding Protection
+
+To prevent DNS rebinding attacks, the MCP Inspector validates the `Origin` header on incoming requests. By default, only requests from the client origin are allowed (respects `CLIENT_PORT` if set, defaulting to port 6274). You can configure additional allowed origins by setting the `ALLOWED_ORIGINS` environment variable (comma-separated list):
+
+```bash
+ALLOWED_ORIGINS=http://localhost:6274,http://127.0.0.1:6274,http://localhost:8000 npm start
+```
+
 ### Configuration
 
 The MCP Inspector supports the following configuration settings. To change them, click on the `Configuration` button in the MCP Inspector UI:
