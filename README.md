@@ -137,6 +137,16 @@ The inspector supports bearer token authentication for SSE connections. Enter yo
 
 The MCP Inspector includes a proxy server that can run and communicate with local MCP processes. The proxy server should not be exposed to untrusted networks as it has permissions to spawn local processes and can connect to any specified MCP server.
 
+#### Local-only Binding
+
+By default, the MCP Inspector proxy server binds only to `127.0.0.1` (localhost) to prevent network access. This ensures the server is not accessible from other devices on the network. If you need to bind to all interfaces for development purposes, you can override this with the `HOST` environment variable:
+
+```bash
+HOST=0.0.0.0 npm start
+```
+
+**Warning:** Only bind to all interfaces in trusted network environments, as this exposes the proxy server's ability to execute local processes.
+
 ### Configuration
 
 The MCP Inspector supports the following configuration settings. To change them, click on the `Configuration` button in the MCP Inspector UI:

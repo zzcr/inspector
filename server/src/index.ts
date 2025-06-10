@@ -415,11 +415,12 @@ app.get("/config", (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 6277;
+const PORT = parseInt(process.env.PORT || '6277', 10);
+const HOST = process.env.HOST || '127.0.0.1';
 
-const server = app.listen(PORT);
+const server = app.listen(PORT, HOST);
 server.on("listening", () => {
-  console.log(`⚙️ Proxy server listening on port ${PORT}`);
+  console.log(`⚙️ Proxy server listening on ${HOST}:${PORT}`);
 });
 server.on("error", (err) => {
   if (err.message.includes(`EADDRINUSE`)) {
