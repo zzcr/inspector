@@ -148,11 +148,11 @@ The MCP Inspector proxy server requires authentication by default. When starting
    http://localhost:6274/?MCP_PROXY_AUTH_TOKEN=3a1c267fad21f7150b7d624c160b7f09b0b8c4f623c7107bbf13378f051538d4
 ```
 
-This token must be included as a Bearer token in the Authorization header for all requests to the server. 
+This token must be included as a Bearer token in the Authorization header for all requests to the server. When authentication is enabled, auto-open is disabled by default to ensure you use the secure URL.
 
-**Option 1: Use the pre-filled URL** - Click the link shown in the console to open the inspector with the token already configured.
+**Recommended: Use the pre-filled URL** - Click or copy the link shown in the console to open the inspector with the token already configured.
 
-**Option 2: Manual configuration** - If you already have the inspector open:
+**Alternative: Manual configuration** - If you already have the inspector open:
 
 1. Click the "Configuration" button in the sidebar
 2. Find "Proxy Session Token" and enter the token displayed in the proxy console

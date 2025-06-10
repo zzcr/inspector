@@ -470,7 +470,7 @@ server.on("listening", () => {
     // Display clickable URL with pre-filled token
     const clientPort = process.env.CLIENT_PORT || '6274';
     const clientUrl = `http://localhost:${clientPort}/?MCP_PROXY_AUTH_TOKEN=${sessionToken}`;
-    console.log(`\n🔗 Open inspector with token pre-filled:\n   ${clientUrl}`);
+    console.log(`\n🔗 Open inspector with token pre-filled:\n   ${clientUrl}\n   (Auto-open is disabled when authentication is enabled)\n`);
   } else {
     console.log(`⚠️  WARNING: Authentication is disabled. This is not recommended.`);
   }
