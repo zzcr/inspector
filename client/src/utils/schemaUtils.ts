@@ -119,7 +119,6 @@ export function generateDefaultValue(
             obj[key] = value;
           }
         }
-
       });
       return obj;
     }
