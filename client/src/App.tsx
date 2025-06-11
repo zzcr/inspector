@@ -68,6 +68,7 @@ import {
   getInitialCommand,
   getInitialArgs,
   initializeInspectorConfig,
+  saveInspectorConfig,
 } from "./utils/configUtils";
 
 const CONFIG_LOCAL_STORAGE_KEY = "inspectorConfig_v1";
@@ -226,7 +227,7 @@ const App = () => {
   }, [headerName]);
 
   useEffect(() => {
-    localStorage.setItem(CONFIG_LOCAL_STORAGE_KEY, JSON.stringify(config));
+    saveInspectorConfig(CONFIG_LOCAL_STORAGE_KEY, config);
   }, [config]);
 
   // Auto-connect to previously saved serverURL after OAuth callback

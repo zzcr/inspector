@@ -2,6 +2,7 @@ export type ConfigItem = {
   label: string;
   description: string;
   value: string | number | boolean;
+  is_session_item: boolean;
 };
 
 /**
