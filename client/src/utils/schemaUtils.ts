@@ -95,8 +95,7 @@ export function generateDefaultValue(
   }
 
   // Check if this property is required in the parent schema
-  const isRequired =
-    parentSchema?.required?.includes(propertyName || "") ?? false;
+  const isRequired = isPropertyRequired(propertyName, parentSchema);
 
   switch (schema.type) {
     case "string":
