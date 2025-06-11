@@ -88,6 +88,8 @@ Object.defineProperty(window, "location", {
   value: {
     origin: "http://localhost:3000",
   },
+  configurable: true,
+  writable: true,
 });
 
 describe("AuthDebugger", () => {
