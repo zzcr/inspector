@@ -63,6 +63,7 @@ import ToolsTab from "./components/ToolsTab";
 import { InspectorConfig } from "./lib/configurationTypes";
 import {
   getMCPProxyAddress,
+  getMCPProxyAuthToken,
   getInitialSseUrl,
   getInitialTransportType,
   getInitialCommand,
@@ -345,7 +346,13 @@ const App = () => {
   }, [sseUrl]);
 
   useEffect(() => {
-    fetch(`${getMCPProxyAddress(config)}/config`)
+    const headers: HeadersInit = {};
+    const proxyAuthToken = getMCPProxyAuthToken(config);
+    if (proxyAuthToken) {
+      headers['Authorization'] = `Bearer ${proxyAuthToken}`;
+    }
+    
+    fetch(`${getMCPProxyAddress(config)}/config`, { headers })
       .then((response) => response.json())
       .then((data) => {
         setEnv(data.defaultEnvironment);
@@ -359,8 +366,7 @@ const App = () => {
       .catch((error) =>
         console.error("Error fetching default environment:", error),
       );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [config]);
 
   useEffect(() => {
     rootsRef.current = roots;

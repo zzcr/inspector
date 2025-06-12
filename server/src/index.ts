@@ -19,7 +19,7 @@ import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import express from "express";
 import { findActualExecutable } from "spawn-rx";
 import mcpProxy from "./mcpProxy.js";
-import { randomUUID, randomBytes } from "node:crypto";
+import { randomUUID, randomBytes, timingSafeEqual } from "node:crypto";
 
 const SSE_HEADERS_PASSTHROUGH = ["authorization"];
 const STREAMABLE_HTTP_HEADERS_PASSTHROUGH = [
@@ -120,14 +120,38 @@ const authMiddleware = (req: express.Request, res: express.Response, next: expre
     return next();
   }
 
-  const authHeader = req.headers.authorization;
-  if (!authHeader || authHeader !== `Bearer ${sessionToken}`) {
+  const sendUnauthorized = () => {
     res.status(401).json({ 
       error: "Unauthorized", 
       message: "Authentication required. Use the session token shown in the console when starting the server."
     });
+  };
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    sendUnauthorized();
     return;
   }
+
+  const providedToken = authHeader.substring(7); // Remove 'Bearer ' prefix
+  const expectedToken = sessionToken;
+
+  // Convert to buffers for timing-safe comparison
+  const providedBuffer = Buffer.from(providedToken);
+  const expectedBuffer = Buffer.from(expectedToken);
+
+  // Check length first to prevent timing attacks
+  if (providedBuffer.length !== expectedBuffer.length) {
+    sendUnauthorized();
+    return;
+  }
+
+  // Perform timing-safe comparison
+  if (!timingSafeEqual(providedBuffer, expectedBuffer)) {
+    sendUnauthorized();
+    return;
+  }
+  
   next();
 };
 
@@ -444,7 +468,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.get("/config", (req, res) => {
+app.get("/config", originValidationMiddleware, authMiddleware, (req, res) => {
   try {
     res.json({
       defaultEnvironment,
