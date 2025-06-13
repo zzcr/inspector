@@ -87,12 +87,12 @@ Object.defineProperty(window, "sessionStorage", {
 // Mock window.location in a way that works in all environments
 const mockLocation = {
   origin: "http://localhost:3000",
-};
+} as Location;
 
 // Try to delete first, then redefine
 try {
-  delete (window as any).location;
-  window.location = mockLocation as any;
+  delete (window as { location?: Location }).location;
+  window.location = mockLocation;
 } catch {
   // If that fails, try Object.defineProperty with configurable
   try {
@@ -103,7 +103,7 @@ try {
     });
   } catch {
     // As a last resort, just assign to window.location
-    (window as any).location = mockLocation;
+    (window as { location: Location }).location = mockLocation;
   }
 }
 
