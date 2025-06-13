@@ -19,7 +19,7 @@ import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import express from "express";
 import { findActualExecutable } from "spawn-rx";
 import mcpProxy from "./mcpProxy.js";
-import { randomUUID } from "node:crypto";
+import { randomUUID, randomBytes, timingSafeEqual } from "node:crypto";
 
 const SSE_HEADERS_PASSTHROUGH = ["authorization"];
 const STREAMABLE_HTTP_HEADERS_PASSTHROUGH = [
@@ -89,6 +89,72 @@ app.use((req, res, next) => {
 const webAppTransports: Map<string, Transport> = new Map<string, Transport>(); // Web app transports by web app sessionId
 const serverTransports: Map<string, Transport> = new Map<string, Transport>(); // Server Transports by web app sessionId
 
+const sessionToken = randomBytes(32).toString('hex');
+const authDisabled = !!process.env.DANGEROUSLY_OMIT_AUTH;
+
+// Origin validation middleware to prevent DNS rebinding attacks
+const originValidationMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const origin = req.headers.origin;
+  
+  // Default origins based on CLIENT_PORT or use environment variable
+  const clientPort = process.env.CLIENT_PORT || '6274';
+  const defaultOrigins = [
+    `http://localhost:${clientPort}`,
+    `http://127.0.0.1:${clientPort}`
+  ];
+  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || defaultOrigins;
+  
+  if (origin && !allowedOrigins.includes(origin)) {
+    console.error(`Invalid origin: ${origin}`);
+    res.status(403).json({ 
+      error: 'Forbidden - invalid origin', 
+      message: 'Request blocked to prevent DNS rebinding attacks. Configure allowed origins via environment variable.'
+    });
+    return;
+  }
+  next();
+};
+
+const authMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (authDisabled) {
+    return next();
+  }
+
+  const sendUnauthorized = () => {
+    res.status(401).json({ 
+      error: "Unauthorized", 
+      message: "Authentication required. Use the session token shown in the console when starting the server."
+    });
+  };
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    sendUnauthorized();
+    return;
+  }
+
+  const providedToken = authHeader.substring(7); // Remove 'Bearer ' prefix
+  const expectedToken = sessionToken;
+
+  // Convert to buffers for timing-safe comparison
+  const providedBuffer = Buffer.from(providedToken);
+  const expectedBuffer = Buffer.from(expectedToken);
+
+  // Check length first to prevent timing attacks
+  if (providedBuffer.length !== expectedBuffer.length) {
+    sendUnauthorized();
+    return;
+  }
+
+  // Perform timing-safe comparison
+  if (!timingSafeEqual(providedBuffer, expectedBuffer)) {
+    sendUnauthorized();
+    return;
+  }
+  
+  next();
+};
+
 const createTransport = async (req: express.Request): Promise<Transport> => {
   const query = req.query;
   console.log("Query parameters:", JSON.stringify(query));
@@ -150,7 +216,7 @@ const createTransport = async (req: express.Request): Promise<Transport> => {
   }
 };
 
-app.get("/mcp", async (req, res) => {
+app.get("/mcp", originValidationMiddleware, authMiddleware, async (req, res) => {
   const sessionId = req.headers["mcp-session-id"] as string;
   console.log(`Received GET message for sessionId ${sessionId}`);
   try {
@@ -169,7 +235,7 @@ app.get("/mcp", async (req, res) => {
   }
 });
 
-app.post("/mcp", async (req, res) => {
+app.post("/mcp", originValidationMiddleware, authMiddleware, async (req, res) => {
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
   let serverTransport: Transport | undefined;
   if (!sessionId) {
@@ -239,7 +305,7 @@ app.post("/mcp", async (req, res) => {
   }
 });
 
-app.delete("/mcp", async (req, res) => {
+app.delete("/mcp", originValidationMiddleware, authMiddleware, async (req, res) => {
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
   console.log(`Received DELETE message for sessionId ${sessionId}`);
   let serverTransport: Transport | undefined;
@@ -266,7 +332,7 @@ app.delete("/mcp", async (req, res) => {
   }
 });
 
-app.get("/stdio", async (req, res) => {
+app.get("/stdio", originValidationMiddleware, authMiddleware, async (req, res) => {
   try {
     console.log("New STDIO connection request");
     let serverTransport: Transport | undefined;
@@ -328,7 +394,7 @@ app.get("/stdio", async (req, res) => {
   }
 });
 
-app.get("/sse", async (req, res) => {
+app.get("/sse", originValidationMiddleware, authMiddleware, async (req, res) => {
   try {
     console.log(
       "New SSE connection request. NOTE: The sse transport is deprecated and has been replaced by StreamableHttp",
@@ -377,7 +443,7 @@ app.get("/sse", async (req, res) => {
   }
 });
 
-app.post("/message", async (req, res) => {
+app.post("/message", originValidationMiddleware, authMiddleware, async (req, res) => {
   try {
     const sessionId = req.query.sessionId;
     console.log(`Received POST message for sessionId ${sessionId}`);
@@ -402,7 +468,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.get("/config", (req, res) => {
+app.get("/config", originValidationMiddleware, authMiddleware, (req, res) => {
   try {
     res.json({
       defaultEnvironment,
@@ -415,11 +481,23 @@ app.get("/config", (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 6277;
+const PORT = parseInt(process.env.PORT || '6277', 10);
+const HOST = process.env.HOST || '127.0.0.1';
 
-const server = app.listen(PORT);
+const server = app.listen(PORT, HOST);
 server.on("listening", () => {
-  console.log(`⚙️ Proxy server listening on port ${PORT}`);
+  console.log(`⚙️ Proxy server listening on ${HOST}:${PORT}`);
+  if (!authDisabled) {
+    console.log(`🔑 Session token: ${sessionToken}`);
+    console.log(`Use this token to authenticate requests or set DANGEROUSLY_OMIT_AUTH=true to disable auth`);
+    
+    // Display clickable URL with pre-filled token
+    const clientPort = process.env.CLIENT_PORT || '6274';
+    const clientUrl = `http://localhost:${clientPort}/?MCP_PROXY_AUTH_TOKEN=${sessionToken}`;
+    console.log(`\n🔗 Open inspector with token pre-filled:\n   ${clientUrl}\n   (Auto-open is disabled when authentication is enabled)\n`);
+  } else {
+    console.log(`⚠️  WARNING: Authentication is disabled. This is not recommended.`);
+  }
 });
 server.on("error", (err) => {
   if (err.message.includes(`EADDRINUSE`)) {
