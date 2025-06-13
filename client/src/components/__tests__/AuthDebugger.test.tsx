@@ -84,11 +84,28 @@ Object.defineProperty(window, "sessionStorage", {
   value: sessionStorageMock,
 });
 
-Object.defineProperty(window, "location", {
-  value: {
-    origin: "http://localhost:3000",
-  },
-});
+// Mock window.location in a way that works in all environments
+const mockLocation = {
+  origin: "http://localhost:3000",
+};
+
+// Try to delete first, then redefine
+try {
+  delete (window as any).location;
+  window.location = mockLocation as any;
+} catch {
+  // If that fails, try Object.defineProperty with configurable
+  try {
+    Object.defineProperty(window, "location", {
+      value: mockLocation,
+      writable: true,
+      configurable: true,
+    });
+  } catch {
+    // As a last resort, just assign to window.location
+    (window as any).location = mockLocation;
+  }
+}
 
 describe("AuthDebugger", () => {
   const defaultAuthState = EMPTY_DEBUGGER_STATE;
