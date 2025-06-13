@@ -85,25 +85,35 @@ Object.defineProperty(window, "sessionStorage", {
 });
 
 // Mock window.location in a way that works in all environments
-const mockLocation = {
+const mockLocation: Partial<Location> = {
   origin: "http://localhost:3000",
-} as Location;
+};
+
+// Use global to access window in a type-safe way
+const globalWindow = global as unknown as Window & typeof globalThis;
 
 // Try to delete first, then redefine
 try {
-  delete (window as { location?: Location }).location;
-  window.location = mockLocation;
+  delete (globalWindow as { location?: Location }).location;
+  Object.defineProperty(globalWindow, "location", {
+    value: mockLocation,
+    writable: true,
+    configurable: true,
+  });
 } catch {
-  // If that fails, try Object.defineProperty with configurable
+  // If that fails, try to just override the origin property
   try {
-    Object.defineProperty(window, "location", {
-      value: mockLocation,
+    Object.defineProperty(globalWindow.location, "origin", {
+      value: "http://localhost:3000",
       writable: true,
       configurable: true,
     });
   } catch {
-    // As a last resort, just assign to window.location
-    (window as { location: Location }).location = mockLocation;
+    // As a last resort, mock what we need for the tests
+    jest.spyOn(window, "location", "get").mockReturnValue({
+      ...window.location,
+      origin: "http://localhost:3000",
+    });
   }
 }
 
