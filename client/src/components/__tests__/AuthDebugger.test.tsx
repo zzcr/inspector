@@ -84,38 +84,31 @@ Object.defineProperty(window, "sessionStorage", {
   value: sessionStorageMock,
 });
 
-// Mock window.location in a way that works in all environments
-const mockLocation: Partial<Location> = {
+// In JSDOM, we can delete window.location even though it's non-configurable
+// This is a quirk of JSDOM that we can use to our advantage
+delete (window as { location?: Location }).location;
+
+// Create a mock location object that tracks href changes
+interface MockLocation extends Partial<Location> {
+  _href: string;
+}
+
+const mockLocation: MockLocation = {
   origin: "http://localhost:3000",
+  _href: "",
+  get href() {
+    return this._href;
+  },
+  set href(value: string) {
+    this._href = value;
+  },
+  assign: jest.fn(),
+  reload: jest.fn(),
+  replace: jest.fn(),
 };
 
-// Use global to access window in a type-safe way
-const globalWindow = global as unknown as Window & typeof globalThis;
-
-// Try to delete first, then redefine
-try {
-  delete (globalWindow as { location?: Location }).location;
-  Object.defineProperty(globalWindow, "location", {
-    value: mockLocation,
-    writable: true,
-    configurable: true,
-  });
-} catch {
-  // If that fails, try to just override the origin property
-  try {
-    Object.defineProperty(globalWindow.location, "origin", {
-      value: "http://localhost:3000",
-      writable: true,
-      configurable: true,
-    });
-  } catch {
-    // As a last resort, mock what we need for the tests
-    jest.spyOn(window, "location", "get").mockReturnValue({
-      ...window.location,
-      origin: "http://localhost:3000",
-    });
-  }
-}
+// Assign the mock to window.location
+(window as { location: Location }).location = mockLocation as Location;
 
 describe("AuthDebugger", () => {
   const defaultAuthState = EMPTY_DEBUGGER_STATE;
