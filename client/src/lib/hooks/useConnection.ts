@@ -246,7 +246,7 @@ export function useConnection({
       const proxyAuthToken = getMCPProxyAuthToken(config);
       const headers: HeadersInit = {};
       if (proxyAuthToken) {
-        headers['Authorization'] = `Bearer ${proxyAuthToken}`;
+        headers["Authorization"] = `Bearer ${proxyAuthToken}`;
       }
       const proxyHealthResponse = await fetch(proxyHealthUrl, { headers });
       const proxyHealth = await proxyHealthResponse.json();
@@ -269,7 +269,7 @@ export function useConnection({
 
   const isProxyAuthError = (error: unknown): boolean => {
     return (
-      error instanceof Error && 
+      error instanceof Error &&
       error.message.includes("Authentication required. Use the session token")
     );
   };
@@ -335,7 +335,7 @@ export function useConnection({
       const proxyAuthToken = getMCPProxyAuthToken(config);
       const proxyHeaders: HeadersInit = {};
       if (proxyAuthToken) {
-        proxyHeaders['Authorization'] = `Bearer ${proxyAuthToken}`;
+        proxyHeaders["Authorization"] = `Bearer ${proxyAuthToken}`;
       }
 
       // Create appropriate transport
@@ -356,7 +356,11 @@ export function useConnection({
               fetch: (
                 url: string | URL | globalThis.Request,
                 init: RequestInit | undefined,
-              ) => fetch(url, { ...init, headers: { ...headers, ...proxyHeaders } }),
+              ) =>
+                fetch(url, {
+                  ...init,
+                  headers: { ...headers, ...proxyHeaders },
+                }),
             },
             requestInit: {
               headers: { ...headers, ...proxyHeaders },
@@ -372,7 +376,11 @@ export function useConnection({
               fetch: (
                 url: string | URL | globalThis.Request,
                 init: RequestInit | undefined,
-              ) => fetch(url, { ...init, headers: { ...headers, ...proxyHeaders } }),
+              ) =>
+                fetch(url, {
+                  ...init,
+                  headers: { ...headers, ...proxyHeaders },
+                }),
             },
             requestInit: {
               headers: { ...headers, ...proxyHeaders },
@@ -388,7 +396,11 @@ export function useConnection({
               fetch: (
                 url: string | URL | globalThis.Request,
                 init: RequestInit | undefined,
-              ) => fetch(url, { ...init, headers: { ...headers, ...proxyHeaders } }),
+              ) =>
+                fetch(url, {
+                  ...init,
+                  headers: { ...headers, ...proxyHeaders },
+                }),
             },
             requestInit: {
               headers: { ...headers, ...proxyHeaders },
@@ -471,7 +483,8 @@ export function useConnection({
         if (isProxyAuthError(error)) {
           toast({
             title: "Proxy Authentication Required",
-            description: "Please enter the session token from the proxy server console in the Configuration settings.",
+            description:
+              "Please enter the session token from the proxy server console in the Configuration settings.",
             variant: "destructive",
           });
           setConnectionStatus("error");

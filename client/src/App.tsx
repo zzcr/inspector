@@ -349,9 +349,9 @@ const App = () => {
     const headers: HeadersInit = {};
     const proxyAuthToken = getMCPProxyAuthToken(config);
     if (proxyAuthToken) {
-      headers['Authorization'] = `Bearer ${proxyAuthToken}`;
+      headers["Authorization"] = `Bearer ${proxyAuthToken}`;
     }
-    
+
     fetch(`${getMCPProxyAddress(config)}/config`, { headers })
       .then((response) => response.json())
       .then((data) => {
