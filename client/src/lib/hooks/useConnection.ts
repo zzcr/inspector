@@ -246,7 +246,7 @@ export function useConnection({
       const proxyAuthToken = getMCPProxyAuthToken(config);
       const headers: HeadersInit = {};
       if (proxyAuthToken) {
-        headers["Authorization"] = `Bearer ${proxyAuthToken}`;
+        headers["X-MCP-Proxy-Auth"] = `Bearer ${proxyAuthToken}`;
       }
       const proxyHealthResponse = await fetch(proxyHealthUrl, { headers });
       const proxyHealth = await proxyHealthResponse.json();
@@ -335,7 +335,7 @@ export function useConnection({
       const proxyAuthToken = getMCPProxyAuthToken(config);
       const proxyHeaders: HeadersInit = {};
       if (proxyAuthToken) {
-        proxyHeaders["Authorization"] = `Bearer ${proxyAuthToken}`;
+        proxyHeaders["X-MCP-Proxy-Auth"] = `Bearer ${proxyAuthToken}`;
       }
 
       // Create appropriate transport

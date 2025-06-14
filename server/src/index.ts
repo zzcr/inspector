@@ -138,13 +138,17 @@ const authMiddleware = (
     });
   };
 
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  const authHeader = req.headers["x-mcp-proxy-auth"];
+  const authHeaderValue = Array.isArray(authHeader)
+    ? authHeader[0]
+    : authHeader;
+
+  if (!authHeaderValue || !authHeaderValue.startsWith("Bearer ")) {
     sendUnauthorized();
     return;
   }
 
-  const providedToken = authHeader.substring(7); // Remove 'Bearer ' prefix
+  const providedToken = authHeaderValue.substring(7); // Remove 'Bearer ' prefix
   const expectedToken = sessionToken;
 
   // Convert to buffers for timing-safe comparison
@@ -196,7 +200,9 @@ const createTransport = async (req: express.Request): Promise<Transport> => {
 
     const headers = getHttpHeaders(req, transportType);
 
-    console.log(`SSE transport: url=${url}, headers=${Object.keys(headers)}`);
+    console.log(
+      `SSE transport: url=${url}, headers=${JSON.stringify(headers)}`,
+    );
 
     const transport = new SSEClientTransport(new URL(url), {
       eventSourceInit: {
