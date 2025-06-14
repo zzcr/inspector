@@ -357,7 +357,7 @@ export function useConnection({
             eventSourceInit: {
               fetch: (
                 url: string | URL | globalThis.Request,
-                init: RequestInit | undefined,
+                init?: RequestInit,
               ) =>
                 fetch(url, {
                   ...init,
@@ -377,7 +377,7 @@ export function useConnection({
             eventSourceInit: {
               fetch: (
                 url: string | URL | globalThis.Request,
-                init: RequestInit | undefined,
+                init?: RequestInit,
               ) =>
                 fetch(url, {
                   ...init,
@@ -397,7 +397,7 @@ export function useConnection({
             eventSourceInit: {
               fetch: (
                 url: string | URL | globalThis.Request,
-                init: RequestInit | undefined,
+                init?: RequestInit,
               ) =>
                 fetch(url, {
                   ...init,
