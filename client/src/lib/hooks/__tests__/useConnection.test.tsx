@@ -329,7 +329,7 @@ describe("useConnection", () => {
       const testUrl = "http://test.com";
       await mockFetch?.(testUrl, {
         headers: {
-          "Accept": "text/event-stream",
+          Accept: "text/event-stream",
         },
         cache: "no-store",
         mode: "cors",
