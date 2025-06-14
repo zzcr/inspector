@@ -28,8 +28,16 @@ export const getMCPServerRequestMaxTotalTimeout = (
   return config.MCP_REQUEST_MAX_TOTAL_TIMEOUT.value as number;
 };
 
-export const getMCPProxyAuthToken = (config: InspectorConfig): string => {
-  return config.MCP_PROXY_AUTH_TOKEN.value as string;
+export const getMCPProxyAuthToken = (
+  config: InspectorConfig,
+): {
+  token: string;
+  header: string;
+} => {
+  return {
+    token: config.MCP_PROXY_AUTH_TOKEN.value as string,
+    header: "X-MCP-Proxy-Auth",
+  };
 };
 
 const getSearchParam = (key: string): string | null => {

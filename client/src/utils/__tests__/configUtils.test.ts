@@ -57,7 +57,7 @@ describe("configUtils", () => {
         ...DEFAULT_INSPECTOR_CONFIG,
         MCP_PROXY_AUTH_TOKEN: {
           ...DEFAULT_INSPECTOR_CONFIG.MCP_PROXY_AUTH_TOKEN,
-          value: null as any,
+          value: null as unknown as string,
         },
       };
 
