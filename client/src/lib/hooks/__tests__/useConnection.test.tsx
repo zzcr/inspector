@@ -327,7 +327,16 @@ describe("useConnection", () => {
       // Verify the fetch function includes the proxy auth header
       const mockFetch = mockSSETransport.options?.eventSourceInit?.fetch;
       const testUrl = "http://test.com";
-      await mockFetch?.(testUrl);
+      await mockFetch?.(testUrl, {
+        headers: {
+          "Accept": "text/event-stream",
+        },
+        cache: "no-store",
+        mode: "cors",
+        signal: new AbortController().signal,
+        redirect: "follow",
+        credentials: "include",
+      });
 
       expect(global.fetch).toHaveBeenCalledTimes(2);
       expect(
