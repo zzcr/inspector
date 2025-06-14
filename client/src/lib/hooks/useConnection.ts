@@ -243,10 +243,11 @@ export function useConnection({
   const checkProxyHealth = async () => {
     try {
       const proxyHealthUrl = new URL(`${getMCPProxyAddress(config)}/health`);
-      const proxyAuthToken = getMCPProxyAuthToken(config);
+      const { token: proxyAuthToken, header: proxyAuthTokenHeader } =
+        getMCPProxyAuthToken(config);
       const headers: HeadersInit = {};
       if (proxyAuthToken) {
-        headers["Authorization"] = `Bearer ${proxyAuthToken}`;
+        headers[proxyAuthTokenHeader] = `Bearer ${proxyAuthToken}`;
       }
       const proxyHealthResponse = await fetch(proxyHealthUrl, { headers });
       const proxyHealth = await proxyHealthResponse.json();
@@ -332,10 +333,11 @@ export function useConnection({
       }
 
       // Add proxy authentication
-      const proxyAuthToken = getMCPProxyAuthToken(config);
+      const { token: proxyAuthToken, header: proxyAuthTokenHeader } =
+        getMCPProxyAuthToken(config);
       const proxyHeaders: HeadersInit = {};
       if (proxyAuthToken) {
-        proxyHeaders["Authorization"] = `Bearer ${proxyAuthToken}`;
+        proxyHeaders[proxyAuthTokenHeader] = `Bearer ${proxyAuthToken}`;
       }
 
       // Create appropriate transport
@@ -355,7 +357,7 @@ export function useConnection({
             eventSourceInit: {
               fetch: (
                 url: string | URL | globalThis.Request,
-                init: RequestInit | undefined,
+                init?: RequestInit,
               ) =>
                 fetch(url, {
                   ...init,
@@ -375,7 +377,7 @@ export function useConnection({
             eventSourceInit: {
               fetch: (
                 url: string | URL | globalThis.Request,
-                init: RequestInit | undefined,
+                init?: RequestInit,
               ) =>
                 fetch(url, {
                   ...init,
@@ -395,7 +397,7 @@ export function useConnection({
             eventSourceInit: {
               fetch: (
                 url: string | URL | globalThis.Request,
-                init: RequestInit | undefined,
+                init?: RequestInit,
               ) =>
                 fetch(url, {
                   ...init,
