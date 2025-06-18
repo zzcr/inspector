@@ -102,7 +102,8 @@ async function startDevClient(clientOptions) {
   const { CLIENT_PORT, authDisabled, sessionToken, abort, cancelled } =
     clientOptions;
   const clientCommand = "npx";
-  const clientArgs = ["vite", "--port", CLIENT_PORT];
+  const host = process.env.HOST || "127.0.0.1";
+  const clientArgs = ["vite", "--port", CLIENT_PORT, "--host", host];
 
   const client = spawn(clientCommand, clientArgs, {
     cwd: resolve(__dirname, ".."),
@@ -113,9 +114,10 @@ async function startDevClient(clientOptions) {
 
   // Auto-open browser after vite starts
   if (process.env.MCP_AUTO_OPEN_ENABLED !== "false") {
+    const clientHost = process.env.HOST || "127.0.0.1";
     const url = authDisabled
-      ? `http://127.0.0.1:${CLIENT_PORT}`
-      : `http://127.0.0.1:${CLIENT_PORT}/?MCP_PROXY_AUTH_TOKEN=${sessionToken}`;
+      ? `http://${clientHost}:${CLIENT_PORT}`
+      : `http://${clientHost}:${CLIENT_PORT}/?MCP_PROXY_AUTH_TOKEN=${sessionToken}`;
 
     // Give vite time to start before opening browser
     setTimeout(() => {
@@ -139,7 +141,8 @@ async function startDevClient(clientOptions) {
 }
 
 async function startProdClient(clientOptions) {
-  const { CLIENT_PORT, authDisabled, sessionToken, abort } = clientOptions;
+  const { CLIENT_PORT, authDisabled, sessionToken, abort, cancelled } =
+    clientOptions;
   const inspectorClientPath = resolve(
     __dirname,
     "../..",
@@ -148,11 +151,12 @@ async function startProdClient(clientOptions) {
     "client.js",
   );
 
-  // Auto-open browser with token
-  if (process.env.MCP_AUTO_OPEN_ENABLED !== "false") {
+  // Only auto-open browser if not cancelled
+  if (process.env.MCP_AUTO_OPEN_ENABLED !== "false" && !cancelled) {
+    const clientHost = process.env.HOST || "127.0.0.1";
     const url = authDisabled
-      ? `http://127.0.0.1:${CLIENT_PORT}`
-      : `http://127.0.0.1:${CLIENT_PORT}/?MCP_PROXY_AUTH_TOKEN=${sessionToken}`;
+      ? `http://${clientHost}:${CLIENT_PORT}`
+      : `http://${clientHost}:${CLIENT_PORT}/?MCP_PROXY_AUTH_TOKEN=${sessionToken}`;
     open(url);
   }
 
