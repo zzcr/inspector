@@ -43,12 +43,6 @@ jobs:
         run: npx playwright install --with-deps
         if: steps.cache-playwright.outputs.cache-hit != 'true'
 
-      - name: Start Server
-        run: npm run start &
-
-      - name: Wait for server to start
-        run: npx wait-on http://localhost:6274
-
       - name: Run Playwright tests
         run: npm run test:e2e
 
