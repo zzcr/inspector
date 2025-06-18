@@ -4,6 +4,14 @@ import { defineConfig, devices } from "@playwright/test";
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
+  /* Run your local dev server before starting the tests */
+  webServer: {
+    cwd: '..',
+    command: 'npm run dev',
+    url: 'http://localhost:6274',
+    reuseExistingServer: !process.env.CI,
+  },
+
   testDir: "./e2e",
   /* Run tests in files in parallel */
   fullyParallel: true,
