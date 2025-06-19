@@ -40,7 +40,7 @@ const server = http.createServer((request, response) => {
 });
 
 const port = process.env.PORT || 6274;
-const host = process.env.HOST || "127.0.0.1";
+const host = process.env.HOST || "localhost";
 server.on("listening", () => {
   console.log(
     `🔍 MCP Inspector is up and running at http://${host}:${port} 🚀`,
