@@ -58,7 +58,7 @@ jobs:
             client/playwright-report/
             client/test-results/
             client/results.json
-          retention-days: 30
+          retention-days: 2
 
       - name: Publish Playwright Test Summary
         uses: daun/playwright-report-summary@v3
