@@ -31,7 +31,7 @@ async function startDevServer(serverOptions) {
     cwd: resolve(__dirname, "../..", "server"),
     env: {
       ...process.env,
-      PORT: SERVER_PORT,
+      SERVER_PORT: SERVER_PORT,
       CLIENT_PORT: CLIENT_PORT,
       MCP_PROXY_TOKEN: sessionToken,
       MCP_ENV_VARS: JSON.stringify(envVars),
@@ -90,7 +90,7 @@ async function startProdServer(serverOptions) {
     {
       env: {
         ...process.env,
-        PORT: SERVER_PORT,
+        SERVER_PORT: SERVER_PORT,
         CLIENT_PORT: CLIENT_PORT,
         MCP_PROXY_TOKEN: sessionToken,
         MCP_ENV_VARS: JSON.stringify(envVars),
@@ -115,7 +115,7 @@ async function startDevClient(clientOptions) {
 
   const client = spawn(clientCommand, clientArgs, {
     cwd: resolve(__dirname, ".."),
-    env: { ...process.env, PORT: CLIENT_PORT },
+    env: { ...process.env, CLIENT_PORT: CLIENT_PORT },
     signal: abort.signal,
     echoOutput: true,
   });
@@ -163,7 +163,7 @@ async function startProdClient(clientOptions) {
   }
 
   await spawnPromise("node", [inspectorClientPath], {
-    env: { ...process.env, PORT: CLIENT_PORT },
+    env: { ...process.env, CLIENT_PORT: CLIENT_PORT },
     signal: abort.signal,
     echoOutput: true,
   });

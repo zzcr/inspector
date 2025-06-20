@@ -39,7 +39,7 @@ const server = http.createServer((request, response) => {
   return handler(request, response, handlerOptions);
 });
 
-const port = process.env.PORT || 6274;
+const port = parseInt(process.env.CLIENT_PORT || "6274", 10);
 const host = process.env.HOST || "localhost";
 server.on("listening", () => {
   console.log(

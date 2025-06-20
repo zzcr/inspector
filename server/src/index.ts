@@ -528,7 +528,7 @@ app.get("/config", originValidationMiddleware, authMiddleware, (req, res) => {
   }
 });
 
-const PORT = parseInt(process.env.PORT || "6277", 10);
+const PORT = parseInt(process.env.SERVER_PORT || "6277", 10);
 const HOST = process.env.HOST || "localhost";
 
 const server = app.listen(PORT, HOST);
