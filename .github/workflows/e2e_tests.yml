@@ -3,7 +3,7 @@ name: Playwright Tests
 on:
   push:
     branches: [main]
-  pull_request_target:
+  pull_request:
     branches: [main]
 
 permissions:
@@ -20,10 +20,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwoff1
 
-      # Security: Explicitly checkout the PR's code, not the target branch
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: actions/setup-node@v4
         with:
