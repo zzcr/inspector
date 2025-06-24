@@ -7,17 +7,29 @@ import { fileURLToPath } from "url";
 import { randomBytes } from "crypto";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const DEFAULT_MCP_PROXY_LISTEN_PORT = "6277";
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms, true));
 }
 
-function getClientUrl(port, authDisabled, sessionToken) {
+function getClientUrl(port, authDisabled, sessionToken, serverPort) {
   const host = process.env.HOST || "localhost";
   const baseUrl = `http://${host}:${port}`;
-  return authDisabled
-    ? baseUrl
-    : `${baseUrl}/?MCP_PROXY_AUTH_TOKEN=${sessionToken}`;
+
+  if (authDisabled) {
+    return baseUrl;
+  }
+
+  const params = new URLSearchParams();
+  params.set("MCP_PROXY_AUTH_TOKEN", sessionToken);
+
+  // Add server port if it's not the default
+  if (serverPort && serverPort !== DEFAULT_MCP_PROXY_LISTEN_PORT) {
+    params.set("MCP_PROXY_PORT", serverPort);
+  }
+
+  return `${baseUrl}/?${params.toString()}`;
 }
 
 async function startDevServer(serverOptions) {
@@ -107,8 +119,14 @@ async function startProdServer(serverOptions) {
 }
 
 async function startDevClient(clientOptions) {
-  const { CLIENT_PORT, authDisabled, sessionToken, abort, cancelled } =
-    clientOptions;
+  const {
+    CLIENT_PORT,
+    SERVER_PORT,
+    authDisabled,
+    sessionToken,
+    abort,
+    cancelled,
+  } = clientOptions;
   const clientCommand = "npx";
   const host = process.env.HOST || "localhost";
   const clientArgs = ["vite", "--port", CLIENT_PORT, "--host", host];
@@ -122,7 +140,12 @@ async function startDevClient(clientOptions) {
 
   // Auto-open browser after vite starts
   if (process.env.MCP_AUTO_OPEN_ENABLED !== "false") {
-    const url = getClientUrl(CLIENT_PORT, authDisabled, sessionToken);
+    const url = getClientUrl(
+      CLIENT_PORT,
+      authDisabled,
+      sessionToken,
+      SERVER_PORT,
+    );
 
     // Give vite time to start before opening browser
     setTimeout(() => {
@@ -146,8 +169,14 @@ async function startDevClient(clientOptions) {
 }
 
 async function startProdClient(clientOptions) {
-  const { CLIENT_PORT, authDisabled, sessionToken, abort, cancelled } =
-    clientOptions;
+  const {
+    CLIENT_PORT,
+    SERVER_PORT,
+    authDisabled,
+    sessionToken,
+    abort,
+    cancelled,
+  } = clientOptions;
   const inspectorClientPath = resolve(
     __dirname,
     "../..",
@@ -158,7 +187,12 @@ async function startProdClient(clientOptions) {
 
   // Only auto-open browser if not cancelled
   if (process.env.MCP_AUTO_OPEN_ENABLED !== "false" && !cancelled) {
-    const url = getClientUrl(CLIENT_PORT, authDisabled, sessionToken);
+    const url = getClientUrl(
+      CLIENT_PORT,
+      authDisabled,
+      sessionToken,
+      SERVER_PORT,
+    );
     open(url);
   }
 
@@ -210,7 +244,7 @@ async function main() {
   }
 
   const CLIENT_PORT = process.env.CLIENT_PORT ?? "6274";
-  const SERVER_PORT = process.env.SERVER_PORT ?? "6277";
+  const SERVER_PORT = process.env.SERVER_PORT ?? DEFAULT_MCP_PROXY_LISTEN_PORT;
 
   console.log(
     isDev
@@ -255,6 +289,7 @@ async function main() {
     try {
       const clientOptions = {
         CLIENT_PORT,
+        SERVER_PORT,
         authDisabled,
         sessionToken,
         abort,

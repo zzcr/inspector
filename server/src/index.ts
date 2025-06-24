@@ -21,6 +21,7 @@ import { findActualExecutable } from "spawn-rx";
 import mcpProxy from "./mcpProxy.js";
 import { randomUUID, randomBytes, timingSafeEqual } from "node:crypto";
 
+const DEFAULT_MCP_PROXY_LISTEN_PORT = "6277";
 const SSE_HEADERS_PASSTHROUGH = ["authorization"];
 const STREAMABLE_HTTP_HEADERS_PASSTHROUGH = [
   "authorization",
@@ -528,7 +529,10 @@ app.get("/config", originValidationMiddleware, authMiddleware, (req, res) => {
   }
 });
 
-const PORT = parseInt(process.env.SERVER_PORT || "6277", 10);
+const PORT = parseInt(
+  process.env.SERVER_PORT || DEFAULT_MCP_PROXY_LISTEN_PORT,
+  10,
+);
 const HOST = process.env.HOST || "localhost";
 
 const server = app.listen(PORT, HOST);
@@ -543,7 +547,17 @@ server.on("listening", () => {
     // Display clickable URL with pre-filled token
     const clientPort = process.env.CLIENT_PORT || "6274";
     const clientHost = process.env.HOST || "localhost";
-    const clientUrl = `http://${clientHost}:${clientPort}/?MCP_PROXY_AUTH_TOKEN=${sessionToken}`;
+
+    // Build URL with query parameters
+    const params = new URLSearchParams();
+    params.set("MCP_PROXY_AUTH_TOKEN", sessionToken);
+
+    // Add server port if it's not the default
+    if (PORT !== parseInt(DEFAULT_MCP_PROXY_LISTEN_PORT, 10)) {
+      params.set("MCP_PROXY_PORT", PORT.toString());
+    }
+
+    const clientUrl = `http://${clientHost}:${clientPort}/?${params.toString()}`;
     console.log(
       `\n🔗 Open inspector with token pre-filled:\n   ${clientUrl}\n`,
     );
