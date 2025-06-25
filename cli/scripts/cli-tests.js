@@ -45,8 +45,12 @@ console.log(
   `${colors.BLUE}- Prompt-related options (--prompt-name, --prompt-args)${colors.NC}`,
 );
 console.log(`${colors.BLUE}- Logging options (--log-level)${colors.NC}`);
-console.log(`${colors.BLUE}- Transport types (--transport http/sse/stdio)${colors.NC}`);
-console.log(`${colors.BLUE}- Transport inference from URL suffixes (/mcp, /sse)${colors.NC}`);
+console.log(
+  `${colors.BLUE}- Transport types (--transport http/sse/stdio)${colors.NC}`,
+);
+console.log(
+  `${colors.BLUE}- Transport inference from URL suffixes (/mcp, /sse)${colors.NC}`,
+);
 console.log(`\n`);
 
 // Get directory paths
@@ -80,20 +84,18 @@ process.on("exit", () => {
     );
   }
 
-  runningServers.forEach(server => {
+  runningServers.forEach((server) => {
     try {
       process.kill(-server.pid);
-    } catch (e) {
-    }
+    } catch (e) {}
   });
 });
 
 process.on("SIGINT", () => {
-  runningServers.forEach(server => {
+  runningServers.forEach((server) => {
     try {
       process.kill(-server.pid);
-    } catch (e) {
-    }
+    } catch (e) {}
   });
   process.exit(1);
 });
@@ -230,7 +232,9 @@ async function runErrorTest(testName, ...args) {
       });
 
       const timeout = setTimeout(() => {
-        console.log(`${colors.YELLOW}Error test timed out: ${testName}${colors.NC}`);
+        console.log(
+          `${colors.YELLOW}Error test timed out: ${testName}${colors.NC}`,
+        );
         child.kill();
       }, 10000);
 
@@ -649,14 +653,20 @@ async function runTests() {
     `\n${colors.YELLOW}=== Running HTTP Transport Tests ===${colors.NC}`,
   );
 
-  console.log(`${colors.BLUE}Starting server-everything in streamableHttp mode.${colors.NC}`);
-  const httpServer = spawn("npx", ["@modelcontextprotocol/server-everything", "streamableHttp"], {
-    detached: true,
-    stdio: "ignore"
-  });
+  console.log(
+    `${colors.BLUE}Starting server-everything in streamableHttp mode.${colors.NC}`,
+  );
+  const httpServer = spawn(
+    "npx",
+    ["@modelcontextprotocol/server-everything", "streamableHttp"],
+    {
+      detached: true,
+      stdio: "ignore",
+    },
+  );
   runningServers.push(httpServer);
 
-  await new Promise(resolve => setTimeout(resolve, 3000));
+  await new Promise((resolve) => setTimeout(resolve, 3000));
 
   // Test 25: HTTP transport inferred from URL ending with /mcp
   await runBasicTest(
@@ -703,9 +713,13 @@ async function runTests() {
   // Kill HTTP server
   try {
     process.kill(-httpServer.pid);
-    console.log(`${colors.BLUE}HTTP server killed, waiting for port to be released...${colors.NC}`);
+    console.log(
+      `${colors.BLUE}HTTP server killed, waiting for port to be released...${colors.NC}`,
+    );
   } catch (e) {
-    console.log(`${colors.RED}Error killing HTTP server: ${e.message}${colors.NC}`);
+    console.log(
+      `${colors.RED}Error killing HTTP server: ${e.message}${colors.NC}`,
+    );
   }
 
   // Print test summary
