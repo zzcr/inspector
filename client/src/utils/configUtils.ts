@@ -5,7 +5,7 @@ import {
 } from "@/lib/constants";
 
 export const getMCPProxyAddress = (config: InspectorConfig): string => {
-  var proxyFullAddress = config.MCP_PROXY_FULL_ADDRESS.value as string;
+  let proxyFullAddress = config.MCP_PROXY_FULL_ADDRESS.value as string;
   if (proxyFullAddress) {
     proxyFullAddress = proxyFullAddress.replace(/\/+$/, "");
     return proxyFullAddress;
