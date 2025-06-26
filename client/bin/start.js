@@ -17,19 +17,14 @@ function getClientUrl(port, authDisabled, sessionToken, serverPort) {
   const host = process.env.HOST || "localhost";
   const baseUrl = `http://${host}:${port}`;
 
-  if (authDisabled) {
-    return baseUrl;
-  }
-
   const params = new URLSearchParams();
-  params.set("MCP_PROXY_AUTH_TOKEN", sessionToken);
-
-  // Add server port if it's not the default
   if (serverPort && serverPort !== DEFAULT_MCP_PROXY_LISTEN_PORT) {
     params.set("MCP_PROXY_PORT", serverPort);
   }
-
-  return `${baseUrl}/?${params.toString()}`;
+  if (!authDisabled) {
+    params.set("MCP_PROXY_AUTH_TOKEN", sessionToken);
+  }
+  return params.size > 0 ? `${baseUrl}/?${params.toString()}` : baseUrl;
 }
 
 async function startDevServer(serverOptions) {
