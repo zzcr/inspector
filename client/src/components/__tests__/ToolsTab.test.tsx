@@ -360,4 +360,29 @@ describe("ToolsTab", () => {
       ).not.toBeInTheDocument();
     });
   });
+
+  describe("Resource Link Content Type", () => {
+    it("should render resource_link content type", () => {
+      const result = {
+        content: [
+          {
+            type: "resource_link",
+            uri: "https://example.com/resource",
+            name: "Test Resource",
+            description: "A test resource",
+            mimeType: "application/json",
+          },
+        ],
+      };
+
+      renderToolsTab({ selectedTool: mockTools[0], toolResult: result });
+
+      expect(
+        screen.getByText("https://example.com/resource"),
+      ).toBeInTheDocument();
+      expect(screen.getByText("Test Resource")).toBeInTheDocument();
+      expect(screen.getByText("A test resource")).toBeInTheDocument();
+      expect(screen.getByText("application/json")).toBeInTheDocument();
+    });
+  });
 });
