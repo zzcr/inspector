@@ -133,21 +133,21 @@ async function startDevClient(clientOptions) {
     echoOutput: true,
   });
 
-  // Auto-open browser after vite starts
-  if (process.env.MCP_AUTO_OPEN_ENABLED !== "false") {
-    const url = getClientUrl(
-      CLIENT_PORT,
-      authDisabled,
-      sessionToken,
-      SERVER_PORT,
-    );
+  const url = getClientUrl(
+    CLIENT_PORT,
+    authDisabled,
+    sessionToken,
+    SERVER_PORT,
+  );
 
-    // Give vite time to start before opening browser
-    setTimeout(() => {
+  // Give vite time to start before opening or logging the URL
+  setTimeout(() => {
+    console.log(`\n🚀 MCP Inspector is up and running at:\n   ${url}\n`);
+    if (process.env.MCP_AUTO_OPEN_ENABLED !== "false") {
+      console.log("🌐 Opening browser...");
       open(url);
-      console.log(`\n🔗 Opening browser at: ${url}\n`);
-    }, 3000);
-  }
+    }
+  }, 3000);
 
   await new Promise((resolve) => {
     client.subscribe({
@@ -180,15 +180,20 @@ async function startProdClient(clientOptions) {
     "client.js",
   );
 
-  // Only auto-open browser if not cancelled
-  if (process.env.MCP_AUTO_OPEN_ENABLED !== "false" && !cancelled) {
-    const url = getClientUrl(
-      CLIENT_PORT,
-      authDisabled,
-      sessionToken,
-      SERVER_PORT,
-    );
-    open(url);
+  const url = getClientUrl(
+    CLIENT_PORT,
+    authDisabled,
+    sessionToken,
+    SERVER_PORT,
+  );
+
+  // Handle auto-open and logging
+  if (!cancelled) {
+    console.log(`\n🚀 MCP Inspector is up and running at:\n   ${url}\n`);
+    if (process.env.MCP_AUTO_OPEN_ENABLED !== "false") {
+      console.log(`\n🌐 Opening browser...:\n`);
+      open(url);
+    }
   }
 
   await spawnPromise("node", [inspectorClientPath], {
