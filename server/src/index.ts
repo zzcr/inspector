@@ -539,27 +539,9 @@ const server = app.listen(PORT, HOST);
 server.on("listening", () => {
   console.log(`⚙️ Proxy server listening on ${HOST}:${PORT}`);
   if (!authDisabled) {
-    console.log(`🔑 Session token: ${sessionToken}`);
     console.log(
-      `Use this token to authenticate requests or set DANGEROUSLY_OMIT_AUTH=true to disable auth`,
-    );
-
-    // Display clickable URL with pre-filled token
-    const clientPort = process.env.CLIENT_PORT || "6274";
-    const clientHost = process.env.HOST || "localhost";
-
-    // Build URL with query parameters
-    const params = new URLSearchParams();
-    params.set("MCP_PROXY_AUTH_TOKEN", sessionToken);
-
-    // Add server port if it's not the default
-    if (PORT !== parseInt(DEFAULT_MCP_PROXY_LISTEN_PORT, 10)) {
-      params.set("MCP_PROXY_PORT", PORT.toString());
-    }
-
-    const clientUrl = `http://${clientHost}:${clientPort}/?${params.toString()}`;
-    console.log(
-      `\n🔗 Open inspector with token pre-filled:\n   ${clientUrl}\n`,
+      `🔑 Session token: ${sessionToken}\n   ` +
+        `Use this token to authenticate requests or set DANGEROUSLY_OMIT_AUTH=true to disable auth`,
     );
   } else {
     console.log(

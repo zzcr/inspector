@@ -187,17 +187,12 @@ async function startProdClient(clientOptions) {
     SERVER_PORT,
   );
 
-  // Handle auto-open and logging
-  if (!cancelled) {
-    console.log(`\n🚀 MCP Inspector is up and running at:\n   ${url}\n`);
-    if (process.env.MCP_AUTO_OPEN_ENABLED !== "false") {
-      console.log(`\n🌐 Opening browser...:\n`);
-      open(url);
-    }
-  }
-
   await spawnPromise("node", [inspectorClientPath], {
-    env: { ...process.env, CLIENT_PORT: CLIENT_PORT },
+    env: {
+      ...process.env,
+      CLIENT_PORT: CLIENT_PORT,
+      INSPECTOR_URL: url,
+    },
     signal: abort.signal,
     echoOutput: true,
   });
