@@ -8,6 +8,8 @@ function onClientError(error: Error) {
 function onServerError(error: Error) {
   if (error?.cause && JSON.stringify(error.cause).includes("ECONNREFUSED")) {
     console.error("Connection refused. Is the MCP server running?");
+  } else if (error.message && error.message.includes("404")) {
+    console.error("Error accessing endpoint (HTTP 404)");
   } else {
     console.error("Error from MCP server:", error);
   }
