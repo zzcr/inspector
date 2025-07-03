@@ -16,10 +16,39 @@ interface DynamicJsonFormProps {
 const isSimpleObject = (schema: JsonSchemaType): boolean => {
   const supportedTypes = ["string", "number", "integer", "boolean", "null"];
   if (supportedTypes.includes(schema.type)) return true;
-  if (schema.type !== "object") return false;
-  return Object.values(schema.properties ?? {}).every((prop) =>
-    supportedTypes.includes(prop.type),
-  );
+  if (schema.type === "object") {
+    return Object.values(schema.properties ?? {}).every((prop) =>
+      supportedTypes.includes(prop.type),
+    );
+  }
+  if (schema.type === "array") {
+    return !!schema.items && isSimpleObject(schema.items);
+  }
+  return false;
+};
+
+const getArrayItemDefault = (schema: JsonSchemaType): JsonValue => {
+  if ("default" in schema && schema.default !== undefined) {
+    return schema.default;
+  }
+
+  switch (schema.type) {
+    case "string":
+      return "";
+    case "number":
+    case "integer":
+      return 0;
+    case "boolean":
+      return false;
+    case "array":
+      return [];
+    case "object":
+      return {};
+    case "null":
+      return null;
+    default:
+      return null;
+  }
 };
 
 const DynamicJsonForm = ({
@@ -113,6 +142,8 @@ const DynamicJsonForm = ({
     currentValue: JsonValue,
     path: string[] = [],
     depth: number = 0,
+    parentSchema?: JsonSchemaType,
+    propertyName?: string,
   ) => {
     if (
       depth >= maxDepth &&
@@ -122,7 +153,8 @@ const DynamicJsonForm = ({
       return (
         <JsonEditor
           value={JSON.stringify(
-            currentValue ?? generateDefaultValue(propSchema),
+            currentValue ??
+              generateDefaultValue(propSchema, propertyName, parentSchema),
             null,
             2,
           )}
@@ -140,69 +172,10 @@ const DynamicJsonForm = ({
       );
     }
 
-    const isFieldRequired = (fieldPath: string[]): boolean => {
-      if (typeof schema.required === "boolean") {
-        return schema.required;
-      }
-      if (Array.isArray(schema.required) && fieldPath.length > 0) {
-        return schema.required.includes(fieldPath[fieldPath.length - 1]);
-      }
-      return false;
-    };
+    // Check if this property is required in the parent schema
+    const isRequired =
+      parentSchema?.required?.includes(propertyName || "") ?? false;
 
-    if (propSchema.type === "object" && propSchema.properties) {
-      const objectValue = (currentValue as Record<string, JsonValue>) || {};
-
-      return (
-        <div className="space-y-4">
-          {Object.entries(propSchema.properties).map(
-            ([fieldName, fieldSchema]) => {
-              const fieldPath = [...path, fieldName];
-              const fieldValue = objectValue[fieldName];
-              const fieldRequired = isFieldRequired([fieldName]);
-
-              return (
-                <div key={fieldName} className="space-y-2">
-                  <label
-                    htmlFor={fieldName}
-                    className="block text-sm font-medium"
-                  >
-                    {fieldSchema.title || fieldName}
-                    {fieldRequired && (
-                      <span className="text-red-500 ml-1">*</span>
-                    )}
-                  </label>
-                  {fieldSchema.description && (
-                    <p className="text-xs text-gray-500">
-                      {fieldSchema.description}
-                    </p>
-                  )}
-                  <div>
-                    {renderFieldInput(
-                      fieldSchema,
-                      fieldValue,
-                      fieldPath,
-                      fieldRequired,
-                    )}
-                  </div>
-                </div>
-              );
-            },
-          )}
-        </div>
-      );
-    }
-
-    const fieldRequired = isFieldRequired(path);
-    return renderFieldInput(propSchema, currentValue, path, fieldRequired);
-  };
-
-  const renderFieldInput = (
-    propSchema: JsonSchemaType,
-    currentValue: JsonValue,
-    path: string[],
-    fieldRequired: boolean,
-  ) => {
     switch (propSchema.type) {
       case "string": {
         if (propSchema.enum) {
@@ -211,13 +184,13 @@ const DynamicJsonForm = ({
               value={(currentValue as string) ?? ""}
               onChange={(e) => {
                 const val = e.target.value;
-                if (!val && !fieldRequired) {
+                if (!val && !isRequired) {
                   handleFieldChange(path, undefined);
                 } else {
                   handleFieldChange(path, val);
                 }
               }}
-              required={fieldRequired}
+              required={isRequired}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800"
             >
               <option value="">Select an option...</option>
@@ -255,17 +228,11 @@ const DynamicJsonForm = ({
             value={(currentValue as string) ?? ""}
             onChange={(e) => {
               const val = e.target.value;
-              if (!val && !fieldRequired) {
-                handleFieldChange(path, undefined);
-              } else {
-                handleFieldChange(path, val);
-              }
+              // Always allow setting string values, including empty strings
+              handleFieldChange(path, val);
             }}
             placeholder={propSchema.description}
-            required={fieldRequired}
-            minLength={propSchema.minLength}
-            maxLength={propSchema.maxLength}
-            pattern={propSchema.pattern}
+            required={isRequired}
           />
         );
       }
@@ -277,7 +244,7 @@ const DynamicJsonForm = ({
             value={(currentValue as number)?.toString() ?? ""}
             onChange={(e) => {
               const val = e.target.value;
-              if (!val && !fieldRequired) {
+              if (!val && !isRequired) {
                 handleFieldChange(path, undefined);
               } else {
                 const num = Number(val);
@@ -287,9 +254,7 @@ const DynamicJsonForm = ({
               }
             }}
             placeholder={propSchema.description}
-            required={fieldRequired}
-            min={propSchema.minimum}
-            max={propSchema.maximum}
+            required={isRequired}
           />
         );
 
@@ -301,7 +266,7 @@ const DynamicJsonForm = ({
             value={(currentValue as number)?.toString() ?? ""}
             onChange={(e) => {
               const val = e.target.value;
-              if (!val && !fieldRequired) {
+              if (!val && !isRequired) {
                 handleFieldChange(path, undefined);
               } else {
                 const num = Number(val);
@@ -311,28 +276,146 @@ const DynamicJsonForm = ({
               }
             }}
             placeholder={propSchema.description}
-            required={fieldRequired}
-            min={propSchema.minimum}
-            max={propSchema.maximum}
+            required={isRequired}
           />
         );
 
       case "boolean":
         return (
-          <div className="flex items-center space-x-2">
-            <Input
-              type="checkbox"
-              checked={(currentValue as boolean) ?? false}
-              onChange={(e) => handleFieldChange(path, e.target.checked)}
-              className="w-4 h-4"
-              required={fieldRequired}
+          <Input
+            type="checkbox"
+            checked={(currentValue as boolean) ?? false}
+            onChange={(e) => handleFieldChange(path, e.target.checked)}
+            className="w-4 h-4"
+            required={isRequired}
+          />
+        );
+      case "object":
+        if (!propSchema.properties) {
+          return (
+            <JsonEditor
+              value={JSON.stringify(currentValue ?? {}, null, 2)}
+              onChange={(newValue) => {
+                try {
+                  const parsed = JSON.parse(newValue);
+                  handleFieldChange(path, parsed);
+                  setJsonError(undefined);
+                } catch (err) {
+                  setJsonError(
+                    err instanceof Error ? err.message : "Invalid JSON",
+                  );
+                }
+              }}
+              error={jsonError}
             />
-            <span className="text-sm">
-              {propSchema.description || "Enable this option"}
-            </span>
+          );
+        }
+
+        return (
+          <div className="space-y-2 border rounded p-3">
+            {Object.entries(propSchema.properties).map(([key, subSchema]) => (
+              <div key={key}>
+                <label className="block text-sm font-medium mb-1">
+                  {key}
+                  {propSchema.required?.includes(key) && (
+                    <span className="text-red-500 ml-1">*</span>
+                  )}
+                </label>
+                {renderFormFields(
+                  subSchema as JsonSchemaType,
+                  (currentValue as Record<string, JsonValue>)?.[key],
+                  [...path, key],
+                  depth + 1,
+                  propSchema,
+                  key,
+                )}
+              </div>
+            ))}
           </div>
         );
+      case "array": {
+        const arrayValue = Array.isArray(currentValue) ? currentValue : [];
+        if (!propSchema.items) return null;
 
+        // If the array items are simple, render as form fields, otherwise use JSON editor
+        if (isSimpleObject(propSchema.items)) {
+          return (
+            <div className="space-y-4">
+              {propSchema.description && (
+                <p className="text-sm text-gray-600">
+                  {propSchema.description}
+                </p>
+              )}
+
+              {propSchema.items?.description && (
+                <p className="text-sm text-gray-500">
+                  Items: {propSchema.items.description}
+                </p>
+              )}
+
+              <div className="space-y-2">
+                {arrayValue.map((item, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    {renderFormFields(
+                      propSchema.items as JsonSchemaType,
+                      item,
+                      [...path, index.toString()],
+                      depth + 1,
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const newArray = [...arrayValue];
+                        newArray.splice(index, 1);
+                        handleFieldChange(path, newArray);
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const defaultValue = getArrayItemDefault(
+                      propSchema.items as JsonSchemaType,
+                    );
+                    handleFieldChange(path, [...arrayValue, defaultValue]);
+                  }}
+                  title={
+                    propSchema.items?.description
+                      ? `Add new ${propSchema.items.description}`
+                      : "Add new item"
+                  }
+                >
+                  Add Item
+                </Button>
+              </div>
+            </div>
+          );
+        }
+
+        // For complex arrays, fall back to JSON editor
+        return (
+          <JsonEditor
+            value={JSON.stringify(currentValue ?? [], null, 2)}
+            onChange={(newValue) => {
+              try {
+                const parsed = JSON.parse(newValue);
+                handleFieldChange(path, parsed);
+                setJsonError(undefined);
+              } catch (err) {
+                setJsonError(
+                  err instanceof Error ? err.message : "Invalid JSON",
+                );
+              }
+            }}
+            error={jsonError}
+          />
+        );
+      }
       default:
         return null;
     }

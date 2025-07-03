@@ -18,7 +18,7 @@ export type JsonSchemaType = {
     | "null";
   title?: string;
   description?: string;
-  required?: boolean | string[];
+  required?: string[];
   default?: JsonValue;
   properties?: Record<string, JsonSchemaType>;
   items?: JsonSchemaType;
