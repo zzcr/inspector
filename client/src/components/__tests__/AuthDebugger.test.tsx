@@ -41,6 +41,7 @@ jest.mock("@modelcontextprotocol/sdk/client/auth.js", () => ({
   startAuthorization: jest.fn(),
   exchangeAuthorization: jest.fn(),
   discoverOAuthProtectedResourceMetadata: jest.fn(),
+  selectResourceURL: jest.fn(),
 }));
 
 // Import the functions to get their types
@@ -84,17 +85,11 @@ Object.defineProperty(window, "sessionStorage", {
   value: sessionStorageMock,
 });
 
-Object.defineProperty(window, "location", {
-  value: {
-    origin: "http://localhost:3000",
-  },
-});
-
 describe("AuthDebugger", () => {
   const defaultAuthState = EMPTY_DEBUGGER_STATE;
 
   const defaultProps = {
-    serverUrl: "https://example.com",
+    serverUrl: "https://example.com/mcp",
     onBack: jest.fn(),
     authState: defaultAuthState,
     updateAuthState: jest.fn(),
@@ -104,7 +99,7 @@ describe("AuthDebugger", () => {
     jest.clearAllMocks();
     sessionStorageMock.getItem.mockReturnValue(null);
 
-    // Supress
+    // Suppress console errors in tests to avoid JSDOM navigation noise
     jest.spyOn(console, "error").mockImplementation(() => {});
 
     mockDiscoverOAuthMetadata.mockResolvedValue(mockOAuthMetadata);
@@ -209,7 +204,7 @@ describe("AuthDebugger", () => {
 
       // Should first discover and save OAuth metadata
       expect(mockDiscoverOAuthMetadata).toHaveBeenCalledWith(
-        new URL("https://example.com"),
+        new URL("https://example.com/"),
       );
 
       // Check that updateAuthState was called with the right info message
@@ -326,6 +321,7 @@ describe("AuthDebugger", () => {
         isInitiatingAuth: false,
         resourceMetadata: null,
         resourceMetadataError: null,
+        resource: null,
         oauthTokens: null,
         oauthStep: "metadata_discovery",
         latestError: null,
@@ -367,7 +363,7 @@ describe("AuthDebugger", () => {
       });
 
       expect(mockDiscoverOAuthMetadata).toHaveBeenCalledWith(
-        new URL("https://example.com"),
+        new URL("https://example.com/"),
       );
     });
 
@@ -447,18 +443,6 @@ describe("AuthDebugger", () => {
     it("should store auth state to sessionStorage before redirect in Quick OAuth Flow", async () => {
       const updateAuthState = jest.fn();
 
-      // Mock window.location.href setter
-      const originalLocation = window.location;
-      const locationMock = {
-        ...originalLocation,
-        href: "",
-        origin: "http://localhost:3000",
-      };
-      Object.defineProperty(window, "location", {
-        writable: true,
-        value: locationMock,
-      });
-
       // Setup mocks for OAuth flow
       mockStartAuthorization.mockResolvedValue({
         authorizationUrl: new URL(
@@ -514,11 +498,11 @@ describe("AuthDebugger", () => {
     it("should successfully fetch and display protected resource metadata", async () => {
       const updateAuthState = jest.fn();
       const mockResourceMetadata = {
-        resource: "https://example.com/api",
+        resource: "https://example.com/mcp",
         authorization_servers: ["https://custom-auth.example.com"],
         bearer_methods_supported: ["header", "body"],
-        resource_documentation: "https://example.com/api/docs",
-        resource_policy_uri: "https://example.com/api/policy",
+        resource_documentation: "https://example.com/mcp/docs",
+        resource_policy_uri: "https://example.com/mcp/policy",
       };
 
       // Mock successful metadata discovery
@@ -556,7 +540,7 @@ describe("AuthDebugger", () => {
       // Wait for the metadata to be fetched
       await waitFor(() => {
         expect(mockDiscoverOAuthProtectedResourceMetadata).toHaveBeenCalledWith(
-          "https://example.com",
+          "https://example.com/mcp",
         );
       });
 
@@ -602,7 +586,7 @@ describe("AuthDebugger", () => {
       // Wait for the metadata fetch to fail
       await waitFor(() => {
         expect(mockDiscoverOAuthProtectedResourceMetadata).toHaveBeenCalledWith(
-          "https://example.com",
+          "https://example.com/mcp",
         );
       });
 
@@ -612,7 +596,7 @@ describe("AuthDebugger", () => {
           expect.objectContaining({
             resourceMetadataError: mockError,
             // Should use the original server URL as fallback
-            authServerUrl: new URL("https://example.com"),
+            authServerUrl: new URL("https://example.com/"),
             oauthStep: "client_registration",
           }),
         );
@@ -620,7 +604,7 @@ describe("AuthDebugger", () => {
 
       // Verify that regular OAuth metadata discovery was still called
       expect(mockDiscoverOAuthMetadata).toHaveBeenCalledWith(
-        new URL("https://example.com"),
+        new URL("https://example.com/"),
       );
     });
   });
