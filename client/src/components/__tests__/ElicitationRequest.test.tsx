@@ -138,14 +138,14 @@ describe("ElicitationRequest", () => {
       });
     });
 
-    it("should call onResolve with reject action when Decline button is clicked", async () => {
+    it("should call onResolve with decline action when Decline button is clicked", async () => {
       renderElicitationRequest();
 
       await act(async () => {
         fireEvent.click(screen.getByRole("button", { name: /decline/i }));
       });
 
-      expect(mockOnResolve).toHaveBeenCalledWith(1, { action: "reject" });
+      expect(mockOnResolve).toHaveBeenCalledWith(1, { action: "decline" });
     });
 
     it("should call onResolve with cancel action when Cancel button is clicked", async () => {

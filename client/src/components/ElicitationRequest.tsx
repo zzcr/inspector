@@ -100,8 +100,8 @@ const ElicitationRequest = ({
     }
   };
 
-  const handleReject = () => {
-    onResolve(request.id, { action: "reject" });
+  const handleDecline = () => {
+    onResolve(request.id, { action: "decline" });
   };
 
   const handleCancel = () => {
@@ -158,7 +158,7 @@ const ElicitationRequest = ({
           <Button type="button" onClick={handleAccept}>
             Submit
           </Button>
-          <Button type="button" variant="outline" onClick={handleReject}>
+          <Button type="button" variant="outline" onClick={handleDecline}>
             Decline
           </Button>
           <Button type="button" variant="outline" onClick={handleCancel}>

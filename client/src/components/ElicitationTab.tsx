@@ -10,7 +10,7 @@ export interface ElicitationRequestData {
 }
 
 export interface ElicitationResponse {
-  action: "accept" | "reject" | "cancel";
+  action: "accept" | "decline" | "cancel";
   content?: Record<string, unknown>;
 }
 

@@ -132,7 +132,7 @@ const App = () => {
     Array<
       PendingElicitationRequest & {
         resolve: (response: ElicitationResponse) => void;
-        reject: (error: Error) => void;
+        decline: (error: Error) => void;
       }
     >
   >([]);
@@ -223,7 +223,7 @@ const App = () => {
             requestedSchema: request.params.requestedSchema,
           },
           resolve,
-          reject: (error: Error) => {
+          decline: (error: Error) => {
             console.error("Elicitation request rejected:", error);
           },
         },
