@@ -103,11 +103,13 @@ describe("DynamicJsonForm String Fields", () => {
       expect(options).toHaveLength(4);
     });
 
-    it("should use enumNames for option labels", () => {
+    it("should use oneOf with const and title for labeled options", () => {
       const schema: JsonSchemaType = {
         type: "string",
-        enum: ["val1", "val2"],
-        enumNames: ["Label 1", "Label 2"],
+        oneOf: [
+          { const: "val1", title: "Label 1" },
+          { const: "val2", title: "Label 2" },
+        ],
         description: "Select with labels",
       };
       render(<DynamicJsonForm schema={schema} value="" onChange={jest.fn()} />);
@@ -115,6 +117,24 @@ describe("DynamicJsonForm String Fields", () => {
       const options = screen.getAllByRole("option");
       expect(options[1]).toHaveProperty("textContent", "Label 1");
       expect(options[2]).toHaveProperty("textContent", "Label 2");
+    });
+
+    it("should call onChange with selected oneOf value", () => {
+      const onChange = jest.fn();
+      const schema: JsonSchemaType = {
+        type: "string",
+        oneOf: [
+          { const: "option1", title: "Option 1" },
+          { const: "option2", title: "Option 2" },
+        ],
+        description: "Select an option",
+      };
+      render(<DynamicJsonForm schema={schema} value="" onChange={onChange} />);
+
+      const select = screen.getByRole("combobox");
+      fireEvent.change(select, { target: { value: "option1" } });
+
+      expect(onChange).toHaveBeenCalledWith("option1");
     });
 
     it("should call onChange with selected enum value", () => {
@@ -130,6 +150,44 @@ describe("DynamicJsonForm String Fields", () => {
       fireEvent.change(select, { target: { value: "option1" } });
 
       expect(onChange).toHaveBeenCalledWith("option1");
+    });
+
+    it("should render JSON Schema spec compliant oneOf with const for labeled enums", () => {
+      // Example from JSON Schema spec: labeled enums using oneOf with const
+      const onChange = jest.fn();
+      const schema: JsonSchemaType = {
+        type: "string",
+        title: "Traffic Light",
+        description: "Select a traffic light color",
+        oneOf: [
+          { const: "red", title: "Stop" },
+          { const: "amber", title: "Caution" },
+          { const: "green", title: "Go" },
+        ],
+      };
+      render(<DynamicJsonForm schema={schema} value="" onChange={onChange} />);
+
+      // Should render as a select dropdown
+      const select = screen.getByRole("combobox");
+      expect(select.tagName).toBe("SELECT");
+
+      // Should have options with proper labels
+      const options = screen.getAllByRole("option");
+      expect(options).toHaveLength(4); // 3 options + 1 default "Select an option..."
+
+      expect(options[0]).toHaveProperty("textContent", "Select an option...");
+      expect(options[1]).toHaveProperty("textContent", "Stop");
+      expect(options[2]).toHaveProperty("textContent", "Caution");
+      expect(options[3]).toHaveProperty("textContent", "Go");
+
+      // Should have proper values
+      expect(options[1]).toHaveProperty("value", "red");
+      expect(options[2]).toHaveProperty("value", "amber");
+      expect(options[3]).toHaveProperty("value", "green");
+
+      // Test onChange behavior
+      fireEvent.change(select, { target: { value: "amber" } });
+      expect(onChange).toHaveBeenCalledWith("amber");
     });
   });
 
@@ -464,8 +522,8 @@ describe("DynamicJsonForm Object Fields", () => {
         <DynamicJsonForm schema={schema} value={{}} onChange={jest.fn()} />,
       );
 
-      const nameLabel = screen.getByText("Name");
-      const optionalLabel = screen.getByText("Optional");
+      const nameLabel = screen.getByText("name");
+      const optionalLabel = screen.getByText("optional");
 
       const nameInput = nameLabel.closest("div")?.querySelector("input");
       const optionalInput = optionalLabel
