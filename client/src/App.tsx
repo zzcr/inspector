@@ -71,9 +71,10 @@ import {
   initializeInspectorConfig,
   saveInspectorConfig,
 } from "./utils/configUtils";
-import ElicitationModal, {
-  ElicitationRequest,
-} from "./components/ElicitationModal";
+import ElicitationTab, {
+  PendingElicitationRequest,
+  ElicitationResponse,
+} from "./components/ElicitationTab";
 
 const CONFIG_LOCAL_STORAGE_KEY = "inspectorConfig_v1";
 
@@ -127,8 +128,14 @@ const App = () => {
       }
     >
   >([]);
-  const [pendingElicitationRequest, setPendingElicitationRequest] =
-    useState<ElicitationRequest | null>(null);
+  const [pendingElicitationRequests, setPendingElicitationRequests] = useState<
+    Array<
+      PendingElicitationRequest & {
+        resolve: (response: ElicitationResponse) => void;
+        reject: (error: Error) => void;
+      }
+    >
+  >([]);
   const [isAuthDebuggerVisible, setIsAuthDebuggerVisible] = useState(false);
 
   // Auth debugger state
@@ -206,12 +213,21 @@ const App = () => {
       ]);
     },
     onElicitationRequest: (request, resolve) => {
-      setPendingElicitationRequest({
-        id: nextRequestId.current++,
-        message: request.params.message,
-        requestedSchema: request.params.requestedSchema,
-        resolve,
-      });
+      setPendingElicitationRequests((prev) => [
+        ...prev,
+        {
+          id: nextRequestId.current++,
+          request: {
+            id: nextRequestId.current,
+            message: request.params.message,
+            requestedSchema: request.params.requestedSchema,
+          },
+          resolve,
+          reject: (error: Error) => {
+            console.error("Elicitation request rejected:", error);
+          },
+        },
+      ]);
     },
     getRoots: () => rootsRef.current,
   });
@@ -408,6 +424,17 @@ const App = () => {
     });
   };
 
+  const handleResolveElicitation = (
+    id: number,
+    response: ElicitationResponse,
+  ) => {
+    setPendingElicitationRequests((prev) => {
+      const request = prev.find((r) => r.id === id);
+      request?.resolve(response);
+      return prev.filter((r) => r.id !== id);
+    });
+  };
+
   const clearError = (tabKey: keyof typeof errors) => {
     setErrors((prev) => ({ ...prev, [tabKey]: null }));
   };
@@ -599,10 +626,6 @@ const App = () => {
     setStdErrNotifications([]);
   };
 
-  const handleCloseElicitationModal = () => {
-    setPendingElicitationRequest(null);
-  };
-
   // Helper component for rendering the AuthDebugger
   const AuthDebuggerWrapper = () => (
     <TabsContent value="auth">
@@ -744,6 +767,15 @@ const App = () => {
                   {pendingSampleRequests.length > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                       {pendingSampleRequests.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="elicitations" className="relative">
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Elicitations
+                  {pendingElicitationRequests.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                      {pendingElicitationRequests.length}
                     </span>
                   )}
                 </TabsTrigger>
@@ -897,6 +929,10 @@ const App = () => {
                       onApprove={handleApproveSampling}
                       onReject={handleRejectSampling}
                     />
+                    <ElicitationTab
+                      pendingRequests={pendingElicitationRequests}
+                      onResolve={handleResolveElicitation}
+                    />
                     <RootsTab
                       roots={roots}
                       setRoots={setRoots}
@@ -955,11 +991,6 @@ const App = () => {
           </div>
         </div>
       </div>
-
-      <ElicitationModal
-        request={pendingElicitationRequest}
-        onClose={handleCloseElicitationModal}
-      />
     </div>
   );
 };
