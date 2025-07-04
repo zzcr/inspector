@@ -345,8 +345,11 @@ describe("JsonSchemaType elicitation field support", () => {
       },
       role: {
         type: "string",
-        enum: ["admin", "user", "guest"],
-        enumNames: ["Administrator", "User", "Guest"],
+        oneOf: [
+          { const: "admin", title: "Administrator" },
+          { const: "user", title: "User" },
+          { const: "guest", title: "Guest" },
+        ],
       },
     },
     required: ["name", "email"],
@@ -372,15 +375,17 @@ describe("JsonSchemaType elicitation field support", () => {
     );
   });
 
-  test("should handle enum and enumNames fields", () => {
+  test("should handle oneOf with const and title fields", () => {
     const schema = {
-      type: "string" as const,
-      enum: ["option1", "option2"],
-      enumNames: ["Option 1", "Option 2"],
+      type: "string",
+      oneOf: [
+        { const: "option1", title: "Option 1" },
+        { const: "option2", title: "Option 2" },
+      ],
     };
 
-    expect(getValueAtPath(schema, ["enum", "0"])).toBe("option1");
-    expect(getValueAtPath(schema, ["enumNames", "1"])).toBe("Option 2");
+    expect(getValueAtPath(schema, ["oneOf", "0", "const"])).toBe("option1");
+    expect(getValueAtPath(schema, ["oneOf", "1", "title"])).toBe("Option 2");
   });
 
   test("should handle validation constraints", () => {
@@ -424,5 +429,98 @@ describe("JsonSchemaType elicitation field support", () => {
     expect(getValueAtPath(schema, ["description"])).toBe(
       "Do you accept the terms and conditions?",
     );
+  });
+
+  test("should handle JSON Schema spec compliant oneOf with const for labeled enums", () => {
+    // Example from JSON Schema spec: labeled enums using oneOf with const
+    const trafficLightSchema = {
+      type: "string" as const,
+      title: "Traffic Light",
+      description: "Select a traffic light color",
+      oneOf: [
+        { const: "red", title: "Stop" },
+        { const: "amber", title: "Caution" },
+        { const: "green", title: "Go" },
+      ],
+    };
+
+    // Verify the schema structure
+    expect(trafficLightSchema.type).toBe("string");
+    expect(trafficLightSchema.oneOf).toHaveLength(3);
+
+    // Verify each oneOf option has const and title
+    expect(trafficLightSchema.oneOf[0].const).toBe("red");
+    expect(trafficLightSchema.oneOf[0].title).toBe("Stop");
+
+    expect(trafficLightSchema.oneOf[1].const).toBe("amber");
+    expect(trafficLightSchema.oneOf[1].title).toBe("Caution");
+
+    expect(trafficLightSchema.oneOf[2].const).toBe("green");
+    expect(trafficLightSchema.oneOf[2].title).toBe("Go");
+
+    // Test with JsonValue operations
+    const schemaAsJsonValue = trafficLightSchema as JsonValue;
+    expect(getValueAtPath(schemaAsJsonValue, ["oneOf", "0", "const"])).toBe(
+      "red",
+    );
+    expect(getValueAtPath(schemaAsJsonValue, ["oneOf", "1", "title"])).toBe(
+      "Caution",
+    );
+    expect(getValueAtPath(schemaAsJsonValue, ["oneOf", "2", "const"])).toBe(
+      "green",
+    );
+  });
+
+  test("should handle complex oneOf scenarios with mixed schema types", () => {
+    const complexSchema = {
+      type: "object" as const,
+      title: "User Preference",
+      properties: {
+        theme: {
+          type: "string" as const,
+          oneOf: [
+            { const: "light", title: "Light Mode" },
+            { const: "dark", title: "Dark Mode" },
+            { const: "auto", title: "Auto (System)" },
+          ],
+        },
+        notifications: {
+          type: "string" as const,
+          oneOf: [
+            { const: "all", title: "All Notifications" },
+            { const: "important", title: "Important Only" },
+            { const: "none", title: "None" },
+          ],
+        },
+      },
+    };
+
+    expect(
+      getValueAtPath(complexSchema, [
+        "properties",
+        "theme",
+        "oneOf",
+        "0",
+        "const",
+      ]),
+    ).toBe("light");
+    expect(
+      getValueAtPath(complexSchema, [
+        "properties",
+        "theme",
+        "oneOf",
+        "1",
+        "title",
+      ]),
+    ).toBe("Dark Mode");
+    expect(
+      getValueAtPath(complexSchema, [
+        "properties",
+        "notifications",
+        "oneOf",
+        "2",
+        "const",
+      ]),
+    ).toBe("none");
   });
 });
