@@ -252,28 +252,32 @@ const DynamicJsonForm = ({
   }, [shouldUseJsonMode, isJsonMode]);
 
   const handleCopyJson = useCallback(() => {
-    try {
-      navigator.clipboard
-        .writeText(JSON.stringify(value, null, 2) ?? "[]")
-        .then(() => {
-          setCopiedJson(true);
+    const copyToClipboard = async () => {
+      try {
+        await navigator.clipboard.writeText(
+          JSON.stringify(value, null, 2) ?? "[]",
+        );
+        setCopiedJson(true);
 
-          toast({
-            title: "JSON copied",
-            description:
-              "The JSON data has been successfully copied to your clipboard.",
-          });
-
-          setTimeout(() => {
-            setCopiedJson(false);
-          }, 2000);
-        })
-        .catch((error) => {
-          reportError(error);
+        toast({
+          title: "JSON copied",
+          description:
+            "The JSON data has been successfully copied to your clipboard.",
         });
-    } catch (error) {
-      reportError(error);
-    }
+
+        setTimeout(() => {
+          setCopiedJson(false);
+        }, 2000);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: `Failed to copy JSON: ${error instanceof Error ? error.message : String(error)}`,
+          variant: "destructive",
+        });
+      }
+    };
+
+    copyToClipboard();
   }, [toast, value]);
 
   return (
@@ -281,7 +285,12 @@ const DynamicJsonForm = ({
       <div className="flex justify-end space-x-2">
         {isJsonMode && (
           <>
-            <Button variant="outline" size="sm" onClick={handleCopyJson}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleCopyJson}
+            >
               {copiedJson ? (
                 <CheckCheck className="h-4 w-4 mr-2" />
               ) : (
