@@ -13,7 +13,13 @@ import {
   ListToolsResult,
   Tool,
 } from "@modelcontextprotocol/sdk/types.js";
-import { Loader2, Send, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
+import {
+  Loader2,
+  Send,
+  ChevronDown,
+  ChevronUp,
+  AlertCircle,
+} from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import ListPane from "./ListPane";
 import JsonView from "./JsonView";
@@ -254,9 +260,9 @@ const ToolsTab = ({
                 <Button
                   onClick={async () => {
                     // Validate JSON inputs before calling tool
-                    const hasValidationErrors = Object.values(formRefs.current).some(
-                      (ref) => ref && !ref.validateJson().isValid
-                    );
+                    const hasValidationErrors = Object.values(
+                      formRefs.current,
+                    ).some((ref) => ref && !ref.validateJson().isValid);
                     if (hasValidationErrors) return;
 
                     try {
