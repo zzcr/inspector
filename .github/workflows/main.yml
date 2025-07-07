@@ -19,12 +19,15 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version-file: package.json
           cache: npm
 
       # Working around https://github.com/npm/cli/issues/4828
       # - run: npm ci
       - run: npm install --no-package-lock
+
+      - name: Check version consistency
+        run: npm run check-version
 
       - name: Check linting
         working-directory: ./client
@@ -50,7 +53,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version-file: package.json
           cache: npm
           registry-url: "https://registry.npmjs.org"
 

@@ -21,6 +21,7 @@ import { findActualExecutable } from "spawn-rx";
 import mcpProxy from "./mcpProxy.js";
 import { randomUUID, randomBytes, timingSafeEqual } from "node:crypto";
 
+const DEFAULT_MCP_PROXY_LISTEN_PORT = "6277";
 const SSE_HEADERS_PASSTHROUGH = ["authorization"];
 const STREAMABLE_HTTP_HEADERS_PASSTHROUGH = [
   "authorization",
@@ -89,7 +90,9 @@ app.use((req, res, next) => {
 const webAppTransports: Map<string, Transport> = new Map<string, Transport>(); // Web app transports by web app sessionId
 const serverTransports: Map<string, Transport> = new Map<string, Transport>(); // Server Transports by web app sessionId
 
-const sessionToken = process.env.MCP_PROXY_AUTH_TOKEN || randomBytes(32).toString("hex");
+// Use provided token from environment or generate a new one
+const sessionToken =
+  process.env.MCP_PROXY_TOKEN || randomBytes(32).toString("hex");
 const authDisabled = !!process.env.DANGEROUSLY_OMIT_AUTH;
 
 // Origin validation middleware to prevent DNS rebinding attacks
@@ -102,12 +105,10 @@ const originValidationMiddleware = (
 
   // Default origins based on CLIENT_PORT or use environment variable
   const clientPort = process.env.CLIENT_PORT || "6274";
-  const defaultOrigins = [
-    `http://localhost:${clientPort}`,
-    `http://127.0.0.1:${clientPort}`,
+  const defaultOrigin = `http://localhost:${clientPort}`;
+  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [
+    defaultOrigin,
   ];
-  const allowedOrigins =
-    process.env.ALLOWED_ORIGINS?.split(",") || defaultOrigins;
 
   if (origin && !allowedOrigins.includes(origin)) {
     console.error(`Invalid origin: ${origin}`);
@@ -528,23 +529,19 @@ app.get("/config", originValidationMiddleware, authMiddleware, (req, res) => {
   }
 });
 
-const PORT = parseInt(process.env.PORT || "6277", 10);
-const HOST = process.env.HOST || "127.0.0.1";
+const PORT = parseInt(
+  process.env.SERVER_PORT || DEFAULT_MCP_PROXY_LISTEN_PORT,
+  10,
+);
+const HOST = process.env.HOST || "localhost";
 
 const server = app.listen(PORT, HOST);
 server.on("listening", () => {
   console.log(`⚙️ Proxy server listening on ${HOST}:${PORT}`);
   if (!authDisabled) {
-    console.log(`🔑 Session token: ${sessionToken}`);
     console.log(
-      `Use this token to authenticate requests or set DANGEROUSLY_OMIT_AUTH=true to disable auth`,
-    );
-
-    // Display clickable URL with pre-filled token
-    const clientPort = process.env.CLIENT_PORT || "6274";
-    const clientUrl = `http://localhost:${clientPort}/?MCP_PROXY_AUTH_TOKEN=${sessionToken}`;
-    console.log(
-      `\n🔗 Open inspector with token pre-filled:\n   ${clientUrl}\n   (Auto-open is disabled when authentication is enabled)\n`,
+      `🔑 Session token: ${sessionToken}\n   ` +
+        `Use this token to authenticate requests or set DANGEROUSLY_OMIT_AUTH=true to disable auth`,
     );
   } else {
     console.log(

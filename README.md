@@ -148,9 +148,9 @@ The MCP Inspector proxy server requires authentication by default. When starting
    http://localhost:6274/?MCP_PROXY_AUTH_TOKEN=3a1c267fad21f7150b7d624c160b7f09b0b8c4f623c7107bbf13378f051538d4
 ```
 
-This token must be included as a Bearer token in the Authorization header for all requests to the server. When authentication is enabled, auto-open is disabled by default to ensure you use the secure URL.
+This token must be included as a Bearer token in the Authorization header for all requests to the server. The inspector will automatically open your browser with the token pre-filled in the URL.
 
-**Recommended: Use the pre-filled URL** - Click or copy the link shown in the console to open the inspector with the token already configured.
+**Automatic browser opening** - The inspector now automatically opens your browser with the token pre-filled in the URL when authentication is enabled.
 
 **Alternative: Manual configuration** - If you already have the inspector open:
 
@@ -174,33 +174,33 @@ MCP_PROXY_AUTH_TOKEN=$(openssl rand -hex 32) npm start
 
 #### Local-only Binding
 
-By default, the MCP Inspector proxy server binds only to `127.0.0.1` (localhost) to prevent network access. This ensures the server is not accessible from other devices on the network. If you need to bind to all interfaces for development purposes, you can override this with the `HOST` environment variable:
+By default, both the MCP Inspector proxy server and client bind only to `localhost` to prevent network access. This ensures they are not accessible from other devices on the network. If you need to bind to all interfaces for development purposes, you can override this with the `HOST` environment variable:
 
 ```bash
 HOST=0.0.0.0 npm start
 ```
 
-**Warning:** Only bind to all interfaces in trusted network environments, as this exposes the proxy server's ability to execute local processes.
+**Warning:** Only bind to all interfaces in trusted network environments, as this exposes the proxy server's ability to execute local processes and both services to network access.
 
 #### DNS Rebinding Protection
 
 To prevent DNS rebinding attacks, the MCP Inspector validates the `Origin` header on incoming requests. By default, only requests from the client origin are allowed (respects `CLIENT_PORT` if set, defaulting to port 6274). You can configure additional allowed origins by setting the `ALLOWED_ORIGINS` environment variable (comma-separated list):
 
 ```bash
-ALLOWED_ORIGINS=http://localhost:6274,http://127.0.0.1:6274,http://localhost:8000 npm start
+ALLOWED_ORIGINS=http://localhost:6274,http://localhost:8000 npm start
 ```
 
 ### Configuration
 
 The MCP Inspector supports the following configuration settings. To change them, click on the `Configuration` button in the MCP Inspector UI:
 
-| Setting                                 | Description                                                                                                   | Default |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------- |
-| `MCP_SERVER_REQUEST_TIMEOUT`            | Timeout for requests to the MCP server (ms)                                                                   | 10000   |
-| `MCP_REQUEST_TIMEOUT_RESET_ON_PROGRESS` | Reset timeout on progress notifications                                                                       | true    |
-| `MCP_REQUEST_MAX_TOTAL_TIMEOUT`         | Maximum total timeout for requests sent to the MCP server (ms) (Use with progress notifications)              | 60000   |
-| `MCP_PROXY_FULL_ADDRESS`                | Set this if you are running the MCP Inspector Proxy on a non-default address. Example: http://10.1.1.22:5577  | ""      |
-| `MCP_AUTO_OPEN_ENABLED`                 | Enable automatic browser opening when inspector starts. Only as environment var, not configurable in browser. | true    |
+| Setting                                 | Description                                                                                                                                       | Default |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `MCP_SERVER_REQUEST_TIMEOUT`            | Timeout for requests to the MCP server (ms)                                                                                                       | 10000   |
+| `MCP_REQUEST_TIMEOUT_RESET_ON_PROGRESS` | Reset timeout on progress notifications                                                                                                           | true    |
+| `MCP_REQUEST_MAX_TOTAL_TIMEOUT`         | Maximum total timeout for requests sent to the MCP server (ms) (Use with progress notifications)                                                  | 60000   |
+| `MCP_PROXY_FULL_ADDRESS`                | Set this if you are running the MCP Inspector Proxy on a non-default address. Example: http://10.1.1.22:5577                                      | ""      |
+| `MCP_AUTO_OPEN_ENABLED`                 | Enable automatic browser opening when inspector starts (works with authentication enabled). Only as environment var, not configurable in browser. | true    |
 
 These settings can be adjusted in real-time through the UI and will persist across sessions.
 
@@ -305,8 +305,11 @@ npx @modelcontextprotocol/inspector --cli node build/index.js --method resources
 # List available prompts
 npx @modelcontextprotocol/inspector --cli node build/index.js --method prompts/list
 
-# Connect to a remote MCP server
+# Connect to a remote MCP server (default is SSE transport)
 npx @modelcontextprotocol/inspector --cli https://my-mcp-server.example.com
+
+# Connect to a remote MCP server (with Streamable HTTP transport)
+npx @modelcontextprotocol/inspector --cli https://my-mcp-server.example.com --transport http
 
 # Call a tool on a remote server
 npx @modelcontextprotocol/inspector --cli https://my-mcp-server.example.com --method tools/call --tool-name remotetool --tool-arg param=value
