@@ -58,7 +58,6 @@ interface UseConnectionOptions {
   headerName?: string;
   oauthClientId?: string;
   oauthScope?: string;
-  oauthResource?: string;
   config: InspectorConfig;
   onNotification?: (notification: Notification) => void;
   onStdErrNotification?: (notification: Notification) => void;
@@ -78,7 +77,6 @@ export function useConnection({
   headerName,
   oauthClientId,
   oauthScope,
-  oauthResource,
   config,
   onNotification,
   onStdErrNotification,
@@ -301,7 +299,6 @@ export function useConnection({
     if (is401Error(error)) {
       const serverAuthProvider = new InspectorOAuthClientProvider(
         sseUrl,
-        oauthResource,
       );
 
       const result = await auth(serverAuthProvider, {
@@ -343,10 +340,7 @@ export function useConnection({
       const headers: HeadersInit = {};
 
       // Create an auth provider with the current server URL
-      const serverAuthProvider = new InspectorOAuthClientProvider(
-        sseUrl,
-        oauthResource,
-      );
+      const serverAuthProvider = new InspectorOAuthClientProvider(sseUrl);
 
       // Use manually provided bearer token if available, otherwise use OAuth tokens
       const token =
@@ -566,10 +560,7 @@ export function useConnection({
         clientTransport as StreamableHTTPClientTransport
       ).terminateSession();
     await mcpClient?.close();
-    const authProvider = new InspectorOAuthClientProvider(
-      sseUrl,
-      oauthResource,
-    );
+    const authProvider = new InspectorOAuthClientProvider(sseUrl);
     authProvider.clear();
     setMcpClient(null);
     setClientTransport(null);

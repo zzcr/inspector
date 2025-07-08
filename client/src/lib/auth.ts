@@ -66,10 +66,8 @@ export const clearClientInformationFromSessionStorage = ({
 };
 
 export class InspectorOAuthClientProvider implements OAuthClientProvider {
-  constructor(
-    protected serverUrl: string,
-    protected resource?: string,
-  ) {
+  
+  constructor(protected serverUrl: string) {
     // Save the server URL to session storage
     sessionStorage.setItem(SESSION_KEYS.SERVER_URL, serverUrl);
   }
@@ -131,18 +129,6 @@ export class InspectorOAuthClientProvider implements OAuthClientProvider {
   }
 
   redirectToAuthorization(authorizationUrl: URL) {
-    /**
-     * Note: This resource parameter is for testing purposes in Inspector.
-     * Once MCP Client SDK supports resource indicators, this parameter
-     * will be passed to the SDK's auth method similar to how scope is passed.
-     *
-     * See: https://github.com/modelcontextprotocol/typescript-sdk/pull/498
-     *
-     * TODO: @xiaoyijun Remove this once MCP Client SDK supports resource indicators.
-     */
-    if (this.resource) {
-      authorizationUrl.searchParams.set("resource", this.resource);
-    }
     window.location.href = authorizationUrl.href;
   }
 
