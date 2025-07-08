@@ -1,104 +1,112 @@
-import { useState, useCallback, useEffect } from "react";
-import { Copy, CheckCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/lib/hooks/useToast";
+import { useState, useCallback, useMemo, memo } from "react";
+import JsonView from "./JsonView";
 
 interface ResourceLinkViewProps {
   uri: string;
   name?: string;
   description?: string;
   mimeType?: string;
+  resourceContent: string;
+  onReadResource?: (uri: string) => void;
 }
 
-const ResourceLinkView = ({
-  uri,
-  name,
-  description,
-  mimeType,
-}: ResourceLinkViewProps) => {
-  const { toast } = useToast();
-  const [copied, setCopied] = useState(false);
+const ResourceLinkView = memo(
+  ({
+    uri,
+    name,
+    description,
+    mimeType,
+    resourceContent,
+    onReadResource,
+  }: ResourceLinkViewProps) => {
+    const [{ expanded, loading }, setState] = useState({
+      expanded: false,
+      loading: false,
+    });
 
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    if (copied) {
-      timeoutId = setTimeout(() => {
-        setCopied(false);
-      }, 500);
-    }
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, [copied]);
-
-  const handleCopyUri = useCallback(() => {
-    try {
-      navigator.clipboard.writeText(uri);
-      setCopied(true);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: `There was an error copying URI to clipboard: ${error instanceof Error ? error.message : String(error)}`,
-        variant: "destructive",
-      });
-    }
-  }, [uri, toast]);
-
-  const displayName = name || new URL(uri).pathname.split("/").pop() || uri;
-
-  return (
-    <div
-      className="p-4 border rounded relative bg-gray-50 dark:bg-gray-800"
-      role="article"
-      aria-label={`Resource link: ${displayName}`}
-    >
-      <Button
-        size="icon"
-        variant="ghost"
-        className="absolute top-2 right-2"
-        onClick={handleCopyUri}
-      >
-        {copied ? (
-          <CheckCheck className="size-4 dark:text-green-700 text-green-600" />
-        ) : (
-          <Copy className="size-4 text-foreground" />
-        )}
-      </Button>
-
-      <div className="pr-10">
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <a
-            href={uri}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded px-1 py-0.5 break-all font-mono flex-1 min-w-0"
-            aria-label={`Open resource: ${uri}`}
-          >
-            {uri}
-          </a>
-          {mimeType && (
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 flex-shrink-0">
-              {mimeType}
-            </span>
-          )}
-        </div>
-
-        {name && (
-          <div className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-1">
-            {name}
+    const expandedContent = useMemo(
+      () =>
+        expanded && resourceContent ? (
+          <div className="mt-2">
+            <div className="flex justify-between items-center mb-1">
+              <span className="font-semibold text-green-600">Resource:</span>
+            </div>
+            <JsonView data={resourceContent} className="bg-background" />
           </div>
-        )}
+        ) : null,
+      [expanded, resourceContent],
+    );
 
-        {description && (
-          <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-            {description}
-          </p>
-        )}
+    const handleClick = useCallback(() => {
+      if (!onReadResource) return;
+      if (!expanded) {
+        setState((prev) => ({ ...prev, expanded: true, loading: true }));
+        onReadResource(uri);
+        setState((prev) => ({ ...prev, loading: false }));
+      } else {
+        setState((prev) => ({ ...prev, expanded: false }));
+      }
+    }, [expanded, onReadResource, uri]);
+
+    const handleKeyDown = useCallback(
+      (e: React.KeyboardEvent) => {
+        if ((e.key === "Enter" || e.key === " ") && onReadResource) {
+          e.preventDefault();
+          handleClick();
+        }
+      },
+      [handleClick, onReadResource],
+    );
+
+    return (
+      <div className="text-sm text-foreground bg-secondary py-2 px-3 rounded">
+        <div
+          className="flex justify-between items-center cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 rounded"
+          onClick={onReadResource ? handleClick : undefined}
+          onKeyDown={onReadResource ? handleKeyDown : undefined}
+          tabIndex={onReadResource ? 0 : -1}
+          role="button"
+          aria-expanded={expanded}
+          aria-label={`${expanded ? "Collapse" : "Expand"} resource ${uri}`}
+        >
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <span className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline px-1 py-0.5 break-all font-mono flex-1 min-w-0">
+                {uri}
+              </span>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {mimeType && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    {mimeType}
+                  </span>
+                )}
+                {onReadResource && (
+                  <span className="ml-2 flex-shrink-0" aria-hidden="true">
+                    {loading ? (
+                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <span>{expanded ? "▼" : "▶"}</span>
+                    )}
+                  </span>
+                )}
+              </div>
+            </div>
+            {name && (
+              <div className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-1">
+                {name}
+              </div>
+            )}
+            {description && (
+              <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                {description}
+              </p>
+            )}
+          </div>
+        </div>
+        {expandedContent}
       </div>
-    </div>
-  );
-};
+    );
+  },
+);
 
 export default ResourceLinkView;

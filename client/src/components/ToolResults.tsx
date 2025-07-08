@@ -10,6 +10,8 @@ import { validateToolOutput, hasOutputSchema } from "@/utils/schemaUtils";
 interface ToolResultsProps {
   toolResult: CompatibilityCallToolResult | null;
   selectedTool: Tool | null;
+  resourceContent: Record<string, string>;
+  onReadResource?: (uri: string) => void;
 }
 
 const checkContentCompatibility = (
@@ -62,7 +64,12 @@ const checkContentCompatibility = (
   }
 };
 
-const ToolResults = ({ toolResult, selectedTool }: ToolResultsProps) => {
+const ToolResults = ({
+  toolResult,
+  selectedTool,
+  resourceContent,
+  onReadResource,
+}: ToolResultsProps) => {
   if (!toolResult) return null;
 
   if ("content" in toolResult) {
@@ -207,6 +214,8 @@ const ToolResults = ({ toolResult, selectedTool }: ToolResultsProps) => {
                     name={item.name}
                     description={item.description}
                     mimeType={item.mimeType}
+                    resourceContent={resourceContent[item.uri] || ""}
+                    onReadResource={onReadResource}
                   />
                 )}
               </div>
