@@ -55,6 +55,8 @@ describe("ToolsTab", () => {
     toolResult: null,
     nextCursor: "",
     error: null,
+    resourceContent: {},
+    onReadResource: jest.fn(),
   };
 
   const renderToolsTab = (props = {}) => {
@@ -383,27 +385,101 @@ describe("ToolsTab", () => {
   });
 
   describe("Resource Link Content Type", () => {
-    it("should render resource_link content type", () => {
+    it("should render resource_link content type and handle expansion", async () => {
+      const mockOnReadResource = jest.fn();
+      const resourceContent = {
+        "test://static/resource/1": JSON.stringify({
+          contents: [
+            {
+              uri: "test://static/resource/1",
+              name: "Resource 1",
+              mimeType: "text/plain",
+              text: "Resource 1: This is a plaintext resource",
+            },
+          ],
+        }),
+      };
+
       const result = {
         content: [
           {
             type: "resource_link",
-            uri: "https://example.com/resource",
-            name: "Test Resource",
-            description: "A test resource",
-            mimeType: "application/json",
+            uri: "test://static/resource/1",
+            name: "Resource 1",
+            description: "Resource 1: plaintext resource",
+            mimeType: "text/plain",
+          },
+          {
+            type: "resource_link",
+            uri: "test://static/resource/2",
+            name: "Resource 2",
+            description: "Resource 2: binary blob resource",
+            mimeType: "application/octet-stream",
+          },
+          {
+            type: "resource_link",
+            uri: "test://static/resource/3",
+            name: "Resource 3",
+            description: "Resource 3: plaintext resource",
+            mimeType: "text/plain",
           },
         ],
       };
 
-      renderToolsTab({ selectedTool: mockTools[0], toolResult: result });
+      renderToolsTab({
+        selectedTool: mockTools[0],
+        toolResult: result,
+        resourceContent,
+        onReadResource: mockOnReadResource,
+      });
 
-      expect(
-        screen.getByText("https://example.com/resource"),
-      ).toBeInTheDocument();
-      expect(screen.getByText("Test Resource")).toBeInTheDocument();
-      expect(screen.getByText("A test resource")).toBeInTheDocument();
-      expect(screen.getByText("application/json")).toBeInTheDocument();
+      ["1", "2", "3"].forEach((id) => {
+        expect(
+          screen.getByText(`test://static/resource/${id}`),
+        ).toBeInTheDocument();
+        expect(screen.getByText(`Resource ${id}`)).toBeInTheDocument();
+      });
+
+      expect(screen.getAllByText("text/plain")).toHaveLength(2);
+      expect(screen.getByText("application/octet-stream")).toBeInTheDocument();
+
+      const expandButtons = screen.getAllByRole("button", {
+        name: /expand resource/i,
+      });
+      expect(expandButtons).toHaveLength(3);
+      expect(screen.queryByText("Resource:")).not.toBeInTheDocument();
+
+      expandButtons.forEach((button) => {
+        expect(button).toHaveAttribute("aria-expanded", "false");
+      });
+
+      const resource1Button = screen.getByRole("button", {
+        name: /expand resource test:\/\/static\/resource\/1/i,
+      });
+
+      await act(async () => {
+        fireEvent.click(resource1Button);
+      });
+
+      expect(mockOnReadResource).toHaveBeenCalledWith(
+        "test://static/resource/1",
+      );
+      expect(screen.getByText("Resource:")).toBeInTheDocument();
+      expect(document.body).toHaveTextContent("contents:");
+      expect(document.body).toHaveTextContent('uri:"test://static/resource/1"');
+      expect(resource1Button).toHaveAttribute("aria-expanded", "true");
+
+      await act(async () => {
+        fireEvent.click(resource1Button);
+      });
+
+      expect(screen.queryByText("Resource:")).not.toBeInTheDocument();
+      expect(document.body).not.toHaveTextContent("contents:");
+      expect(document.body).not.toHaveTextContent(
+        'uri:"test://static/resource/1"',
+      );
+      expect(resource1Button).toHaveAttribute("aria-expanded", "false");
+      expect(mockOnReadResource).toHaveBeenCalledTimes(1);
     });
   });
 });
