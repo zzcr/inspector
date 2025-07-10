@@ -357,7 +357,104 @@ describe("ToolsTab", () => {
       // Should show compatibility result
       expect(
         screen.getByText(
-          /matches structured content|not a single text block|not valid JSON|does not match/,
+          /Found matching JSON content/,
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("should accept multiple content blocks with structured output", () => {
+      cacheToolOutputSchemas([toolWithOutputSchema]);
+
+      const multipleBlocksResult = {
+        content: [
+          { type: "text", text: "Here is the weather data:" },
+          { type: "text", text: '{"temperature": 25}' },
+          { type: "text", text: "Have a nice day!" },
+        ],
+        structuredContent: { temperature: 25 },
+      };
+
+      renderToolsTab({
+        selectedTool: toolWithOutputSchema,
+        toolResult: multipleBlocksResult,
+      });
+
+      // Should show compatible result with multiple blocks
+      expect(
+        screen.getByText(
+          /Found matching JSON content.*among multiple text blocks/,
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("should accept mixed content types with structured output", () => {
+      cacheToolOutputSchemas([toolWithOutputSchema]);
+
+      const mixedContentResult = {
+        content: [
+          { type: "text", text: "Weather report:" },
+          { type: "text", text: '{"temperature": 25}' },
+          { type: "image", data: "base64data", mimeType: "image/png" },
+        ],
+        structuredContent: { temperature: 25 },
+      };
+
+      renderToolsTab({
+        selectedTool: toolWithOutputSchema,
+        toolResult: mixedContentResult,
+      });
+
+      // Should show compatible result with additional content blocks
+      expect(
+        screen.getByText(
+          /Found matching JSON content.*with additional content blocks/,
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("should reject when no text blocks match structured content", () => {
+      cacheToolOutputSchemas([toolWithOutputSchema]);
+
+      const noMatchResult = {
+        content: [
+          { type: "text", text: "Some text" },
+          { type: "text", text: '{"humidity": 60}' }, // Different structure
+        ],
+        structuredContent: { temperature: 25 },
+      };
+
+      renderToolsTab({
+        selectedTool: toolWithOutputSchema,
+        toolResult: noMatchResult,
+      });
+
+      // Should show incompatible result
+      expect(
+        screen.getByText(
+          /No text content block contains JSON matching structured content/,
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("should reject when no text blocks are present", () => {
+      cacheToolOutputSchemas([toolWithOutputSchema]);
+
+      const noTextBlocksResult = {
+        content: [
+          { type: "image", data: "base64data", mimeType: "image/png" },
+        ],
+        structuredContent: { temperature: 25 },
+      };
+
+      renderToolsTab({
+        selectedTool: toolWithOutputSchema,
+        toolResult: noTextBlocksResult,
+      });
+
+      // Should show incompatible result
+      expect(
+        screen.getByText(
+          /No text content blocks found to match structured content/,
         ),
       ).toBeInTheDocument();
     });
@@ -376,7 +473,7 @@ describe("ToolsTab", () => {
       // Should not show any compatibility messages
       expect(
         screen.queryByText(
-          /matches structured content|not a single text block|not valid JSON|does not match/,
+          /Found matching JSON content|No text content blocks found|No text content block contains JSON/,
         ),
       ).not.toBeInTheDocument();
     });
