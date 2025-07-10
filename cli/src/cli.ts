@@ -59,11 +59,6 @@ async function runWebClient(args: Args): Promise<void> {
     "start.js",
   );
 
-  const CLIENT_PORT: string = process.env.CLIENT_PORT ?? "6274";
-  const SERVER_PORT: string = process.env.SERVER_PORT ?? "6277";
-
-  console.log("Starting MCP inspector...");
-
   const abort = new AbortController();
   let cancelled: boolean = false;
   process.on("SIGINT", () => {
@@ -71,12 +66,8 @@ async function runWebClient(args: Args): Promise<void> {
     abort.abort();
   });
 
-  let server: ReturnType<typeof spawnPromise>;
-  let serverOk: unknown;
-
   try {
     await spawnPromise("node", [inspectorClientPath], {
-      env: { ...process.env, PORT: CLIENT_PORT },
       signal: abort.signal,
       echoOutput: true,
     });
