@@ -1,4 +1,5 @@
 import JsonView from "./JsonView";
+import ResourceLinkView from "./ResourceLinkView";
 import {
   CallToolResultSchema,
   CompatibilityCallToolResult,
@@ -9,6 +10,8 @@ import { validateToolOutput, hasOutputSchema } from "@/utils/schemaUtils";
 interface ToolResultsProps {
   toolResult: CompatibilityCallToolResult | null;
   selectedTool: Tool | null;
+  resourceContent: Record<string, string>;
+  onReadResource?: (uri: string) => void;
 }
 
 const checkContentCompatibility = (
@@ -61,7 +64,12 @@ const checkContentCompatibility = (
   }
 };
 
-const ToolResults = ({ toolResult, selectedTool }: ToolResultsProps) => {
+const ToolResults = ({
+  toolResult,
+  selectedTool,
+  resourceContent,
+  onReadResource,
+}: ToolResultsProps) => {
   if (!toolResult) return null;
 
   if ("content" in toolResult) {
@@ -200,6 +208,16 @@ const ToolResults = ({ toolResult, selectedTool }: ToolResultsProps) => {
                   ) : (
                     <JsonView data={item.resource} />
                   ))}
+                {item.type === "resource_link" && (
+                  <ResourceLinkView
+                    uri={item.uri}
+                    name={item.name}
+                    description={item.description}
+                    mimeType={item.mimeType}
+                    resourceContent={resourceContent[item.uri] || ""}
+                    onReadResource={onReadResource}
+                  />
+                )}
               </div>
             ))}
           </div>
