@@ -354,7 +354,9 @@ describe("ToolsTab", () => {
       });
 
       // Should show compatibility result
-      expect(screen.getByText(/matching json/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/structured content matches/i),
+      ).toBeInTheDocument();
     });
 
     it("should accept multiple content blocks with structured output", () => {
@@ -374,7 +376,9 @@ describe("ToolsTab", () => {
       });
 
       // Should show compatible result with multiple blocks
-      expect(screen.getByText(/matching json.*multiple/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/structured content matches.*multiple/i),
+      ).toBeInTheDocument();
     });
 
     it("should accept mixed content types with structured output", () => {
@@ -445,7 +449,9 @@ describe("ToolsTab", () => {
 
       // Should not show any compatibility messages
       expect(
-        screen.queryByText(/matching json|no text blocks|no matching/i),
+        screen.queryByText(
+          /structured content matches|no text blocks|no.*matches/i,
+        ),
       ).not.toBeInTheDocument();
     });
   });

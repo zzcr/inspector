@@ -27,7 +27,7 @@ const checkContentCompatibility = (
   if (textBlocks.length === 0) {
     return {
       isCompatible: false,
-      message: "No text blocks found",
+      message: "No text blocks to match structured content",
     };
   }
 
@@ -46,7 +46,7 @@ const checkContentCompatibility = (
       if (isEqual) {
         return {
           isCompatible: true,
-          message: `Matching JSON found${textBlocks.length > 1 ? " (multiple blocks)" : ""}${unstructuredContent.length > textBlocks.length ? " + other content" : ""}`,
+          message: `Structured content matches text block${textBlocks.length > 1 ? " (multiple blocks)" : ""}${unstructuredContent.length > textBlocks.length ? " + other content" : ""}`,
         };
       }
     } catch {
@@ -57,7 +57,7 @@ const checkContentCompatibility = (
 
   return {
     isCompatible: false,
-    message: "No matching JSON found",
+    message: "No text block matches structured content",
   };
 };
 
