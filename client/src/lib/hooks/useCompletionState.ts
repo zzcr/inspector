@@ -28,6 +28,7 @@ export function useCompletionState(
     ref: ResourceReference | PromptReference,
     argName: string,
     value: string,
+    context?: Record<string, string>,
     signal?: AbortSignal,
   ) => Promise<string[]>,
   completionsSupported: boolean = true,
@@ -66,6 +67,7 @@ export function useCompletionState(
         ref: ResourceReference | PromptReference,
         argName: string,
         value: string,
+        context?: Record<string, string>,
       ) => {
         if (!completionsSupported) {
           return;
@@ -82,10 +84,13 @@ export function useCompletionState(
         }));
 
         try {
+          console.log(state);
+
           const values = await handleCompletion(
             ref,
             argName,
             value,
+            context,
             abortController.signal,
           );
 
@@ -97,6 +102,7 @@ export function useCompletionState(
             }));
           }
         } catch {
+          console.error("completion failed");
           if (!abortController.signal.aborted) {
             setState((prev) => ({
               ...prev,
