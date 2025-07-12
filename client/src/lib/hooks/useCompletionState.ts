@@ -84,7 +84,9 @@ export function useCompletionState(
         }));
 
         try {
-          console.log(state);
+          if (context !== undefined) {
+            delete context[argName];
+          }
 
           const values = await handleCompletion(
             ref,

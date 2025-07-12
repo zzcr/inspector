@@ -74,6 +74,7 @@ const PromptsTab = ({
         },
         argName,
         value,
+        promptArgs,
       );
     }
   };
