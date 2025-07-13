@@ -117,8 +117,8 @@ export const oauthTransitions: Record<OAuthStep, StateTransition> = {
       const array = new Uint8Array(32);
       crypto.getRandomValues(array);
       const state = Array.from(array, (byte) =>
-        byte.toString(16).padStart(2, '0'),
-      ).join('');
+        byte.toString(16).padStart(2, "0"),
+      ).join("");
 
       const { authorizationUrl, codeVerifier } = await startAuthorization(
         context.serverUrl,
