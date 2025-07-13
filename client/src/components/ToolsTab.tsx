@@ -46,6 +46,7 @@ const ToolsTab = ({
   const [params, setParams] = useState<Record<string, unknown>>({});
   const [isToolRunning, setIsToolRunning] = useState(false);
   const [isOutputSchemaExpanded, setIsOutputSchemaExpanded] = useState(false);
+  const [isMetaExpanded, setIsMetaExpanded] = useState(false);
 
   useEffect(() => {
     const params = Object.entries(
@@ -242,6 +243,38 @@ const ToolsTab = ({
                       }`}
                     >
                       <JsonView data={selectedTool.outputSchema} />
+                    </div>
+                  </div>
+                )}
+                {selectedTool && (selectedTool as any)._meta && (
+                  <div className="bg-gray-50 dark:bg-gray-900 p-3 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-semibold">Meta:</h4>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setIsMetaExpanded(!isMetaExpanded)}
+                        className="h-6 px-2"
+                      >
+                        {isMetaExpanded ? (
+                          <>
+                            <ChevronUp className="h-3 w-3 mr-1" />
+                            Collapse
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="h-3 w-3 mr-1" />
+                            Expand
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    <div
+                      className={`transition-all ${
+                        isMetaExpanded ? "" : "max-h-[8rem] overflow-y-auto"
+                      }`}
+                    >
+                      <JsonView data={(selectedTool as any)._meta} />
                     </div>
                   </div>
                 )}
