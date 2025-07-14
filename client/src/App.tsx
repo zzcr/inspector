@@ -204,7 +204,7 @@ const App = () => {
       ]);
     },
     getRoots: () => rootsRef.current,
-    defaultLoggingLevel: "debug"
+    defaultLoggingLevel: logLevel
   });
 
   useEffect(() => {
