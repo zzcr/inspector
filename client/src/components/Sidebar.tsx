@@ -389,7 +389,7 @@ const Sidebar = ({
                       className="font-mono"
                     />
                     <label className="text-sm font-medium">
-                      Redirect URL (auto-populated)
+                      Redirect URL
                     </label>
                     <Input
                       readOnly
