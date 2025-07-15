@@ -23,7 +23,11 @@ jobs:
           node-version-file: package.json
           cache: npm
 
-      - run: npm install
+      - name: Current directory
+        run: pwd
+
+      - name: Install dependencies
+        run: npm install
 
       - name: Build CLI
         run: npm run build
