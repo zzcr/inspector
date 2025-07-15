@@ -23,8 +23,7 @@ jobs:
           node-version-file: package.json
           cache: npm
 
-      # Working around https://github.com/npm/cli/issues/4828
-      - run: npm install --no-package-lock
+      - run: npm install
 
       - name: Build CLI
         run: npm run build
