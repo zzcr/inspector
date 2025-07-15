@@ -36,3 +36,6 @@ jobs:
 
       - name: Run tests
         run: npm test
+        env:
+          NPM_CONFIG_YES: true
+          CI: true
