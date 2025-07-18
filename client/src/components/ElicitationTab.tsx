@@ -17,6 +17,7 @@ export interface ElicitationResponse {
 export type PendingElicitationRequest = {
   id: number;
   request: ElicitationRequestData;
+  originatingTab?: string;
 };
 
 export type Props = {
