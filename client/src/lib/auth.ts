@@ -66,7 +66,6 @@ export const clearClientInformationFromSessionStorage = ({
 };
 
 export class InspectorOAuthClientProvider implements OAuthClientProvider {
-  
   constructor(protected serverUrl: string) {
     // Save the server URL to session storage
     sessionStorage.setItem(SESSION_KEYS.SERVER_URL, serverUrl);
@@ -89,10 +88,11 @@ export class InspectorOAuthClientProvider implements OAuthClientProvider {
 
   async clientInformation() {
     // Try to get the preregistered client information from session storage first
-    const preregisteredClientInformation = await getClientInformationFromSessionStorage({
-      serverUrl: this.serverUrl,
-      isPreregistered: true,
-    });
+    const preregisteredClientInformation =
+      await getClientInformationFromSessionStorage({
+        serverUrl: this.serverUrl,
+        isPreregistered: true,
+      });
 
     // If no preregistered client information is found, get the dynamically registered client information
     return (

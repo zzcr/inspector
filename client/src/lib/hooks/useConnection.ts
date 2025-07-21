@@ -36,7 +36,11 @@ import { z } from "zod";
 import { ConnectionStatus } from "../constants";
 import { Notification, StdErrNotificationSchema } from "../notificationTypes";
 import { auth } from "@modelcontextprotocol/sdk/client/auth.js";
-import { clearClientInformationFromSessionStorage, InspectorOAuthClientProvider, saveClientInformationToSessionStorage } from "../auth";
+import {
+  clearClientInformationFromSessionStorage,
+  InspectorOAuthClientProvider,
+  saveClientInformationToSessionStorage,
+} from "../auth";
 import packageJson from "../../../package.json";
 import {
   getMCPProxyAddress,
@@ -297,9 +301,7 @@ export function useConnection({
 
   const handleAuthError = async (error: unknown) => {
     if (is401Error(error)) {
-      const serverAuthProvider = new InspectorOAuthClientProvider(
-        sseUrl,
-      );
+      const serverAuthProvider = new InspectorOAuthClientProvider(sseUrl);
 
       const result = await auth(serverAuthProvider, {
         serverUrl: sseUrl,
