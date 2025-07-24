@@ -52,7 +52,7 @@ import { z } from "zod";
 import "./App.css";
 import AuthDebugger from "./components/AuthDebugger";
 import ConsoleTab from "./components/ConsoleTab";
-import HistoryAndNotifications from "./components/History";
+import HistoryAndNotifications from "./components/HistoryAndNotifications";
 import PingTab from "./components/PingTab";
 import PromptsTab, { Prompt } from "./components/PromptsTab";
 import ResourcesTab from "./components/ResourcesTab";
@@ -84,6 +84,9 @@ const App = () => {
     ResourceTemplate[]
   >([]);
   const [resourceContent, setResourceContent] = useState<string>("");
+  const [resourceContentMap, setResourceContentMap] = useState<
+    Record<string, string>
+  >({});
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [promptContent, setPromptContent] = useState<string>("");
   const [tools, setTools] = useState<Tool[]>([]);
@@ -597,7 +600,12 @@ const App = () => {
       ReadResourceResultSchema,
       "resources",
     );
-    setResourceContent(JSON.stringify(response, null, 2));
+    const content = JSON.stringify(response, null, 2);
+    setResourceContent(content);
+    setResourceContentMap((prev) => ({
+      ...prev,
+      [uri]: content,
+    }));
   };
 
   const subscribeToResource = async (uri: string) => {
@@ -985,6 +993,11 @@ const App = () => {
                       toolResult={toolResult}
                       nextCursor={nextToolCursor}
                       error={errors.tools}
+                      resourceContent={resourceContentMap}
+                      onReadResource={(uri: string) => {
+                        clearError("resources");
+                        readResource(uri);
+                      }}
                     />
                     <ConsoleTab />
                     <PingTab
