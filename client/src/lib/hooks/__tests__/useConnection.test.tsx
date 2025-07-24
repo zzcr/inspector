@@ -86,6 +86,8 @@ jest.mock("../../auth", () => ({
   InspectorOAuthClientProvider: jest.fn().mockImplementation(() => ({
     tokens: jest.fn().mockResolvedValue({ access_token: "mock-token" }),
   })),
+  clearClientInformationFromSessionStorage: jest.fn(),
+  saveClientInformationToSessionStorage: jest.fn(),
 }));
 
 describe("useConnection", () => {

@@ -31,13 +31,17 @@ import {
   ElicitRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { RequestOptions } from "@modelcontextprotocol/sdk/shared/protocol.js";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/lib/hooks/useToast";
 import { z } from "zod";
 import { ConnectionStatus } from "../constants";
 import { Notification, StdErrNotificationSchema } from "../notificationTypes";
 import { auth } from "@modelcontextprotocol/sdk/client/auth.js";
-import { InspectorOAuthClientProvider } from "../auth";
+import {
+  clearClientInformationFromSessionStorage,
+  InspectorOAuthClientProvider,
+  saveClientInformationToSessionStorage,
+} from "../auth";
 import packageJson from "../../../package.json";
 import {
   getMCPProxyAddress,
@@ -57,6 +61,8 @@ interface UseConnectionOptions {
   env: Record<string, string>;
   bearerToken?: string;
   headerName?: string;
+  oauthClientId?: string;
+  oauthScope?: string;
   config: InspectorConfig;
   onNotification?: (notification: Notification) => void;
   onStdErrNotification?: (notification: Notification) => void;
@@ -76,6 +82,8 @@ export function useConnection({
   env,
   bearerToken,
   headerName,
+  oauthClientId,
+  oauthScope,
   config,
   onNotification,
   onStdErrNotification,
@@ -96,6 +104,22 @@ export function useConnection({
     { request: string; response?: string }[]
   >([]);
   const [completionsSupported, setCompletionsSupported] = useState(false);
+
+  useEffect(() => {
+    if (!oauthClientId) {
+      clearClientInformationFromSessionStorage({
+        serverUrl: sseUrl,
+        isPreregistered: true,
+      });
+      return;
+    }
+
+    saveClientInformationToSessionStorage({
+      serverUrl: sseUrl,
+      clientInformation: { client_id: oauthClientId },
+      isPreregistered: true,
+    });
+  }, [oauthClientId, sseUrl]);
 
   const pushHistory = (request: object, response?: object) => {
     setRequestHistory((prev) => [
@@ -283,7 +307,10 @@ export function useConnection({
     if (is401Error(error)) {
       const serverAuthProvider = new InspectorOAuthClientProvider(sseUrl);
 
-      const result = await auth(serverAuthProvider, { serverUrl: sseUrl });
+      const result = await auth(serverAuthProvider, {
+        serverUrl: sseUrl,
+        scope: oauthScope,
+      });
       return result === "AUTHORIZED";
     }
 
