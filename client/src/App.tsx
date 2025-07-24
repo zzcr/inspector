@@ -71,6 +71,10 @@ import {
   initializeInspectorConfig,
   saveInspectorConfig,
 } from "./utils/configUtils";
+import ElicitationTab, {
+  PendingElicitationRequest,
+  ElicitationResponse,
+} from "./components/ElicitationTab";
 
 const CONFIG_LOCAL_STORAGE_KEY = "inspectorConfig_v1";
 
@@ -135,13 +139,19 @@ const App = () => {
       }
     >
   >([]);
+  const [pendingElicitationRequests, setPendingElicitationRequests] = useState<
+    Array<
+      PendingElicitationRequest & {
+        resolve: (response: ElicitationResponse) => void;
+        decline: (error: Error) => void;
+      }
+    >
+  >([]);
   const [isAuthDebuggerVisible, setIsAuthDebuggerVisible] = useState(false);
 
-  // Auth debugger state
   const [authState, setAuthState] =
     useState<AuthDebuggerState>(EMPTY_DEBUGGER_STATE);
 
-  // Helper function to update specific auth state properties
   const updateAuthState = (updates: Partial<AuthDebuggerState>) => {
     setAuthState((prev) => ({ ...prev, ...updates }));
   };
@@ -168,6 +178,19 @@ const App = () => {
   >();
   const [nextToolCursor, setNextToolCursor] = useState<string | undefined>();
   const progressTokenRef = useRef(0);
+
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    const hash = window.location.hash.slice(1);
+    const initialTab = hash || "resources";
+    return initialTab;
+  });
+
+  const currentTabRef = useRef<string>(activeTab);
+  const lastToolCallOriginTabRef = useRef<string>(activeTab);
+
+  useEffect(() => {
+    currentTabRef.current = activeTab;
+  }, [activeTab]);
 
   const { height: historyPaneHeight, handleDragStart } = useDraggablePane(300);
   const {
@@ -213,8 +236,63 @@ const App = () => {
         { id: nextRequestId.current++, request, resolve, reject },
       ]);
     },
+    onElicitationRequest: (request, resolve) => {
+      const currentTab = lastToolCallOriginTabRef.current;
+
+      setPendingElicitationRequests((prev) => [
+        ...prev,
+        {
+          id: nextRequestId.current++,
+          request: {
+            id: nextRequestId.current,
+            message: request.params.message,
+            requestedSchema: request.params.requestedSchema,
+          },
+          originatingTab: currentTab,
+          resolve,
+          decline: (error: Error) => {
+            console.error("Elicitation request rejected:", error);
+          },
+        },
+      ]);
+
+      setActiveTab("elicitations");
+      window.location.hash = "elicitations";
+    },
     getRoots: () => rootsRef.current,
   });
+
+  useEffect(() => {
+    if (serverCapabilities) {
+      const hash = window.location.hash.slice(1);
+
+      const validTabs = [
+        ...(serverCapabilities?.resources ? ["resources"] : []),
+        ...(serverCapabilities?.prompts ? ["prompts"] : []),
+        ...(serverCapabilities?.tools ? ["tools"] : []),
+        "ping",
+        "sampling",
+        "elicitations",
+        "roots",
+        "auth",
+      ];
+
+      const isValidTab = validTabs.includes(hash);
+
+      if (!isValidTab) {
+        const defaultTab = serverCapabilities?.resources
+          ? "resources"
+          : serverCapabilities?.prompts
+            ? "prompts"
+            : serverCapabilities?.tools
+              ? "tools"
+              : "ping";
+
+        setActiveTab(defaultTab);
+        window.location.hash = defaultTab;
+      }
+    }
+  }, [serverCapabilities]);
 
   useEffect(() => {
     localStorage.setItem("lastCommand", command);
@@ -252,7 +330,6 @@ const App = () => {
     saveInspectorConfig(CONFIG_LOCAL_STORAGE_KEY, config);
   }, [config]);
 
-  // Auto-connect to previously saved serverURL after OAuth callback
   const onOAuthConnect = useCallback(
     (serverUrl: string) => {
       setSseUrl(serverUrl);
@@ -262,7 +339,6 @@ const App = () => {
     [connectMcpServer],
   );
 
-  // Update OAuth debug state during debug callback
   const onOAuthDebugConnect = useCallback(
     async ({
       authorizationCode,
@@ -283,7 +359,6 @@ const App = () => {
       }
 
       if (restoredState && authorizationCode) {
-        // Restore the previous auth state and continue the OAuth flow
         let currentState: AuthDebuggerState = {
           ...restoredState,
           authorizationCode,
@@ -294,12 +369,10 @@ const App = () => {
         };
 
         try {
-          // Create a new state machine instance to continue the flow
           const stateMachine = new OAuthStateMachine(sseUrl, (updates) => {
             currentState = { ...currentState, ...updates };
           });
 
-          // Continue stepping through the OAuth flow from where we left off
           while (
             currentState.oauthStep !== "complete" &&
             currentState.oauthStep !== "authorization_code"
@@ -308,7 +381,6 @@ const App = () => {
           }
 
           if (currentState.oauthStep === "complete") {
-            // After the flow completes or reaches a user-input step, update the app state
             updateAuthState({
               ...currentState,
               statusMessage: {
@@ -331,7 +403,6 @@ const App = () => {
           });
         }
       } else if (authorizationCode) {
-        // Fallback to the original behavior if no state was restored
         updateAuthState({
           authorizationCode,
           oauthStep: "token_request",
@@ -341,7 +412,6 @@ const App = () => {
     [sseUrl],
   );
 
-  // Load OAuth tokens when sseUrl changes
   useEffect(() => {
     const loadOAuthTokens = async () => {
       try {
@@ -400,6 +470,18 @@ const App = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1);
+      if (hash && hash !== activeTab) {
+        setActiveTab(hash);
+      }
+    };
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, [activeTab]);
+
   const handleApproveSampling = (id: number, result: CreateMessageResult) => {
     setPendingSampleRequests((prev) => {
       const request = prev.find((r) => r.id === id);
@@ -412,6 +494,44 @@ const App = () => {
     setPendingSampleRequests((prev) => {
       const request = prev.find((r) => r.id === id);
       request?.reject(new Error("Sampling request rejected"));
+      return prev.filter((r) => r.id !== id);
+    });
+  };
+
+  const handleResolveElicitation = (
+    id: number,
+    response: ElicitationResponse,
+  ) => {
+    setPendingElicitationRequests((prev) => {
+      const request = prev.find((r) => r.id === id);
+      if (request) {
+        request.resolve(response);
+
+        if (request.originatingTab) {
+          const originatingTab = request.originatingTab;
+
+          const validTabs = [
+            ...(serverCapabilities?.resources ? ["resources"] : []),
+            ...(serverCapabilities?.prompts ? ["prompts"] : []),
+            ...(serverCapabilities?.tools ? ["tools"] : []),
+            "ping",
+            "sampling",
+            "elicitations",
+            "roots",
+            "auth",
+          ];
+
+          if (validTabs.includes(originatingTab)) {
+            setActiveTab(originatingTab);
+            window.location.hash = originatingTab;
+
+            setTimeout(() => {
+              setActiveTab(originatingTab);
+              window.location.hash = originatingTab;
+            }, 100);
+          }
+        }
+      }
       return prev.filter((r) => r.id !== id);
     });
   };
@@ -473,7 +593,23 @@ const App = () => {
     setNextResourceTemplateCursor(response.nextCursor);
   };
 
+  const getPrompt = async (name: string, args: Record<string, string> = {}) => {
+    lastToolCallOriginTabRef.current = currentTabRef.current;
+
+    const response = await sendMCPRequest(
+      {
+        method: "prompts/get" as const,
+        params: { name, arguments: args },
+      },
+      GetPromptResultSchema,
+      "prompts",
+    );
+    setPromptContent(JSON.stringify(response, null, 2));
+  };
+
   const readResource = async (uri: string) => {
+    lastToolCallOriginTabRef.current = currentTabRef.current;
+
     const response = await sendMCPRequest(
       {
         method: "resources/read" as const,
@@ -535,18 +671,6 @@ const App = () => {
     setNextPromptCursor(response.nextCursor);
   };
 
-  const getPrompt = async (name: string, args: Record<string, string> = {}) => {
-    const response = await sendMCPRequest(
-      {
-        method: "prompts/get" as const,
-        params: { name, arguments: args },
-      },
-      GetPromptResultSchema,
-      "prompts",
-    );
-    setPromptContent(JSON.stringify(response, null, 2));
-  };
-
   const listTools = async () => {
     const response = await sendMCPRequest(
       {
@@ -558,11 +682,12 @@ const App = () => {
     );
     setTools(response.tools);
     setNextToolCursor(response.nextCursor);
-    // Cache output schemas for validation
     cacheToolOutputSchemas(response.tools);
   };
 
   const callTool = async (name: string, params: Record<string, unknown>) => {
+    lastToolCallOriginTabRef.current = currentTabRef.current;
+
     try {
       const response = await sendMCPRequest(
         {
@@ -578,6 +703,7 @@ const App = () => {
         CompatibilityCallToolResultSchema,
         "tools",
       );
+
       setToolResult(response);
     } catch (e) {
       const toolResult: CompatibilityCallToolResult = {
@@ -612,7 +738,6 @@ const App = () => {
     setStdErrNotifications([]);
   };
 
-  // Helper component for rendering the AuthDebugger
   const AuthDebuggerWrapper = () => (
     <TabsContent value="auth">
       <AuthDebugger
@@ -624,7 +749,6 @@ const App = () => {
     </TabsContent>
   );
 
-  // Helper function to render OAuth callback components
   if (window.location.pathname === "/oauth/callback") {
     const OAuthCallback = React.lazy(
       () => import("./components/OAuthCallback"),
@@ -688,7 +812,6 @@ const App = () => {
           loggingSupported={!!serverCapabilities?.logging || false}
           clearStdErrNotifications={clearStdErrNotifications}
         />
-        {/* Drag handle for resizing sidebar */}
         <div
           onMouseDown={handleSidebarDragStart}
           style={{
@@ -709,21 +832,12 @@ const App = () => {
         <div className="flex-1 overflow-auto">
           {mcpClient ? (
             <Tabs
-              defaultValue={
-                Object.keys(serverCapabilities ?? {}).includes(
-                  window.location.hash.slice(1),
-                )
-                  ? window.location.hash.slice(1)
-                  : serverCapabilities?.resources
-                    ? "resources"
-                    : serverCapabilities?.prompts
-                      ? "prompts"
-                      : serverCapabilities?.tools
-                        ? "tools"
-                        : "ping"
-              }
+              value={activeTab}
               className="w-full p-4"
-              onValueChange={(value) => (window.location.hash = value)}
+              onValueChange={(value) => {
+                setActiveTab(value);
+                window.location.hash = value;
+              }}
             >
               <TabsList className="mb-4 py-0">
                 <TabsTrigger
@@ -757,6 +871,15 @@ const App = () => {
                   {pendingSampleRequests.length > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                       {pendingSampleRequests.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="elicitations" className="relative">
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Elicitations
+                  {pendingElicitationRequests.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                      {pendingElicitationRequests.length}
                     </span>
                   )}
                 </TabsTrigger>
@@ -876,7 +999,6 @@ const App = () => {
                       clearTools={() => {
                         setTools([]);
                         setNextToolCursor(undefined);
-                        // Clear cached output schemas
                         cacheToolOutputSchemas([]);
                       }}
                       callTool={async (name, params) => {
@@ -914,6 +1036,10 @@ const App = () => {
                       pendingRequests={pendingSampleRequests}
                       onApprove={handleApproveSampling}
                       onReject={handleRejectSampling}
+                    />
+                    <ElicitationTab
+                      pendingRequests={pendingElicitationRequests}
+                      onResolve={handleResolveElicitation}
                     />
                     <RootsTab
                       roots={roots}

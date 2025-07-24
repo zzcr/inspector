@@ -28,6 +28,7 @@ import {
   ToolListChangedNotificationSchema,
   PromptListChangedNotificationSchema,
   Progress,
+  ElicitRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { RequestOptions } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import { useEffect, useState } from "react";
@@ -68,6 +69,8 @@ interface UseConnectionOptions {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onPendingRequest?: (request: any, resolve: any, reject: any) => void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onElicitationRequest?: (request: any, resolve: any) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getRoots?: () => any[];
 }
 
@@ -85,6 +88,7 @@ export function useConnection({
   onNotification,
   onStdErrNotification,
   onPendingRequest,
+  onElicitationRequest,
   getRoots,
 }: UseConnectionOptions) {
   const [connectionStatus, setConnectionStatus] =
@@ -322,6 +326,7 @@ export function useConnection({
       {
         capabilities: {
           sampling: {},
+          elicitation: {},
           roots: {
             listChanged: true,
           },
@@ -545,6 +550,14 @@ export function useConnection({
       if (getRoots) {
         client.setRequestHandler(ListRootsRequestSchema, async () => {
           return { roots: getRoots() };
+        });
+      }
+
+      if (onElicitationRequest) {
+        client.setRequestHandler(ElicitRequestSchema, async (request) => {
+          return new Promise((resolve) => {
+            onElicitationRequest(request, resolve);
+          });
         });
       }
 
