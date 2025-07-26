@@ -20,7 +20,7 @@
     "dev:windows": "tsx watch --clear-screen=false src/index.ts < NUL"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.17",
+    "@types/cors": "^2.8.19",
     "@types/express": "^4.17.23",
     "@types/ws": "^8.5.12",
     "tsx": "^4.19.0",
