@@ -166,6 +166,12 @@ If you need to disable authentication (NOT RECOMMENDED), you can set the `DANGER
 DANGEROUSLY_OMIT_AUTH=true npm start
 ```
 
+You can also set the token via the `MCP_PROXY_AUTH_TOKEN` environment variable when starting the server:
+
+```bash
+MCP_PROXY_AUTH_TOKEN=$(openssl rand -hex 32) npm start
+```
+
 #### Local-only Binding
 
 By default, both the MCP Inspector proxy server and client bind only to `localhost` to prevent network access. This ensures they are not accessible from other devices on the network. If you need to bind to all interfaces for development purposes, you can override this with the `HOST` environment variable:
@@ -309,7 +315,7 @@ npx @modelcontextprotocol/inspector --cli node build/index.js --method prompts/l
 npx @modelcontextprotocol/inspector --cli https://my-mcp-server.example.com
 
 # Connect to a remote MCP server (with Streamable HTTP transport)
-npx @modelcontextprotocol/inspector --cli https://my-mcp-server.example.com --transport http
+npx @modelcontextprotocol/inspector --cli https://my-mcp-server.example.com --transport http --method tools/list
 
 # Call a tool on a remote server
 npx @modelcontextprotocol/inspector --cli https://my-mcp-server.example.com --method tools/call --tool-name remotetool --tool-arg param=value
