@@ -30,7 +30,10 @@ export async function listTools(client: Client): Promise<McpResponse> {
   }
 }
 
-function convertParameterValue(value: string, schema: JsonSchemaType): JsonValue {
+function convertParameterValue(
+  value: string,
+  schema: JsonSchemaType,
+): JsonValue {
   if (!value) {
     return value;
   }
@@ -92,11 +95,11 @@ export async function callTool(
       // since we now accept pre-parsed values from the CLI
       const stringArgs: Record<string, string> = {};
       for (const [key, value] of Object.entries(args)) {
-        if (typeof value === 'string') {
+        if (typeof value === "string") {
           stringArgs[key] = value;
         }
       }
-      
+
       if (Object.keys(stringArgs).length > 0) {
         const convertedStringArgs = convertParameters(tool, stringArgs);
         convertedArgs = { ...args, ...convertedStringArgs };

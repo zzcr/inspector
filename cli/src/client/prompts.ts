@@ -34,7 +34,7 @@ export async function getPrompt(
     const stringArgs: Record<string, string> = {};
     if (args) {
       for (const [key, value] of Object.entries(args)) {
-        if (typeof value === 'string') {
+        if (typeof value === "string") {
           stringArgs[key] = value;
         } else if (value === null || value === undefined) {
           stringArgs[key] = String(value);
