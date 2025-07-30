@@ -14,6 +14,8 @@ type Args = {
   args: string[];
   envArgs: Record<string, string>;
   cli: boolean;
+  transport?: "stdio" | "sse" | "streamable-http";
+  serverUrl?: string;
 };
 
 type CliOptions = {
@@ -23,11 +25,18 @@ type CliOptions = {
   cli?: boolean;
 };
 
-type ServerConfig = {
-  command: string;
-  args?: string[];
-  env?: Record<string, string>;
-};
+type ServerConfig =
+  | {
+      type: "stdio";
+      command: string;
+      args?: string[];
+      env?: Record<string, string>;
+    }
+  | {
+      type: "sse" | "streamable-http";
+      url: string;
+      note?: string;
+    };
 
 function handleError(error: unknown): never {
   let message: string;
@@ -72,6 +81,16 @@ async function runWebClient(args: Args): Promise<void> {
   // Pass environment variables
   for (const [key, value] of Object.entries(args.envArgs)) {
     startArgs.push("-e", `${key}=${value}`);
+  }
+
+  // Pass transport type if specified
+  if (args.transport) {
+    startArgs.push("--transport", args.transport);
+  }
+
+  // Pass server URL if specified
+  if (args.serverUrl) {
+    startArgs.push("--server-url", args.serverUrl);
   }
 
   // Pass command and args (using -- to separate them)
@@ -217,12 +236,33 @@ function parseArgs(): Args {
   if (options.config && options.server) {
     const config = loadConfigFile(options.config, options.server);
 
-    return {
-      command: config.command,
-      args: [...(config.args || []), ...finalArgs],
-      envArgs: { ...(config.env || {}), ...(options.e || {}) },
-      cli: options.cli || false,
-    };
+    if (config.type === "stdio") {
+      return {
+        command: config.command,
+        args: [...(config.args || []), ...finalArgs],
+        envArgs: { ...(config.env || {}), ...(options.e || {}) },
+        cli: options.cli || false,
+        transport: "stdio",
+      };
+    } else if (config.type === "sse" || config.type === "streamable-http") {
+      return {
+        command: "",
+        args: finalArgs,
+        envArgs: options.e || {},
+        cli: options.cli || false,
+        transport: config.type,
+        serverUrl: config.url,
+      };
+    } else {
+      // Backwards compatibility: if no type field, assume stdio
+      return {
+        command: (config as any).command || "",
+        args: [...((config as any).args || []), ...finalArgs],
+        envArgs: { ...((config as any).env || {}), ...(options.e || {}) },
+        cli: options.cli || false,
+        transport: "stdio",
+      };
+    }
   }
 
   // Otherwise use command line arguments
