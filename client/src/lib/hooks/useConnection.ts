@@ -565,6 +565,7 @@ export function useConnection({
 
       if (capabilities?.logging && defaultLoggingLevel) {
         await client.setLoggingLevel(defaultLoggingLevel);
+      }
 
       if (onElicitationRequest) {
         client.setRequestHandler(ElicitRequestSchema, async (request) => {
