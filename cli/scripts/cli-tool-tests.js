@@ -26,17 +26,21 @@ let FAILED_TESTS = 0;
 let SKIPPED_TESTS = 0;
 let TOTAL_TESTS = 0;
 
-console.log(
-  `${colors.YELLOW}=== MCP Inspector CLI Tool Tests ===${colors.NC}`,
-);
+console.log(`${colors.YELLOW}=== MCP Inspector CLI Tool Tests ===${colors.NC}`);
 console.log(
   `${colors.BLUE}This script tests the MCP Inspector CLI's tool-related functionality:${colors.NC}`,
 );
 console.log(`${colors.BLUE}- Tool discovery and listing${colors.NC}`);
-console.log(`${colors.BLUE}- JSON argument parsing (strings, numbers, booleans, objects, arrays)${colors.NC}`);
+console.log(
+  `${colors.BLUE}- JSON argument parsing (strings, numbers, booleans, objects, arrays)${colors.NC}`,
+);
 console.log(`${colors.BLUE}- Tool schema validation${colors.NC}`);
-console.log(`${colors.BLUE}- Tool execution with various argument types${colors.NC}`);
-console.log(`${colors.BLUE}- Error handling for invalid tools and arguments${colors.NC}`);
+console.log(
+  `${colors.BLUE}- Tool execution with various argument types${colors.NC}`,
+);
+console.log(
+  `${colors.BLUE}- Error handling for invalid tools and arguments${colors.NC}`,
+);
 console.log(`\n`);
 
 // Get directory paths
@@ -372,7 +376,6 @@ async function runTests() {
     "--tool-arg",
     'message="null"',
   );
-
 
   // Test 14: Multiple arguments with mixed types (using add tool)
   await runBasicTest(

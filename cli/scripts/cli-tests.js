@@ -451,7 +451,6 @@ async function runTests() {
     "tools/list",
   );
 
-
   console.log(
     `\n${colors.YELLOW}=== Running Resource-Related Tests ===${colors.NC}`,
   );
