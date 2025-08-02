@@ -160,6 +160,15 @@ export function normalizeUnionType(schema: JsonSchemaType): JsonSchemaType {
     return { ...schema, type: "string", anyOf: undefined };
   }
 
+  // Handle anyOf with boolean and null (FastMCP pattern)
+  if (
+    schema.anyOf &&
+    schema.anyOf.some((t) => (t as JsonSchemaType).type === "boolean") &&
+    schema.anyOf.some((t) => (t as JsonSchemaType).type === "null")
+  ) {
+    return { ...schema, type: "boolean", anyOf: undefined };
+  }
+
   // Handle array type with string and null
   if (
     Array.isArray(schema.type) &&
@@ -167,6 +176,15 @@ export function normalizeUnionType(schema: JsonSchemaType): JsonSchemaType {
     schema.type.includes("null")
   ) {
     return { ...schema, type: "string" };
+  }
+
+  // Handle array type with boolean and null
+  if (
+    Array.isArray(schema.type) &&
+    schema.type.includes("boolean") &&
+    schema.type.includes("null")
+  ) {
+    return { ...schema, type: "boolean" };
   }
 
   return schema;
