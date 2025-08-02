@@ -146,6 +146,33 @@ export function isPropertyRequired(
 }
 
 /**
+ * Normalizes union types (like string|null from FastMCP) to simple types for form rendering
+ * @param schema The JSON schema to normalize
+ * @returns A normalized schema or the original schema
+ */
+export function normalizeUnionType(schema: JsonSchemaType): JsonSchemaType {
+  // Handle anyOf with string and null (FastMCP pattern)
+  if (
+    schema.anyOf &&
+    schema.anyOf.some((t) => (t as JsonSchemaType).type === "string") &&
+    schema.anyOf.some((t) => (t as JsonSchemaType).type === "null")
+  ) {
+    return { ...schema, type: "string", anyOf: undefined };
+  }
+
+  // Handle array type with string and null
+  if (
+    Array.isArray(schema.type) &&
+    schema.type.includes("string") &&
+    schema.type.includes("null")
+  ) {
+    return { ...schema, type: "string" };
+  }
+
+  return schema;
+}
+
+/**
  * Formats a field key into a human-readable label
  * @param key The field key to format
  * @returns A formatted label string
