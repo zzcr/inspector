@@ -151,40 +151,84 @@ export function isPropertyRequired(
  * @returns A normalized schema or the original schema
  */
 export function normalizeUnionType(schema: JsonSchemaType): JsonSchemaType {
-  // Handle anyOf with string and null (FastMCP pattern)
+  // Handle anyOf with exactly string and null (FastMCP pattern)
   if (
     schema.anyOf &&
+    schema.anyOf.length === 2 &&
     schema.anyOf.some((t) => (t as JsonSchemaType).type === "string") &&
     schema.anyOf.some((t) => (t as JsonSchemaType).type === "null")
   ) {
     return { ...schema, type: "string", anyOf: undefined };
   }
 
-  // Handle anyOf with boolean and null (FastMCP pattern)
+  // Handle anyOf with exactly boolean and null (FastMCP pattern)
   if (
     schema.anyOf &&
+    schema.anyOf.length === 2 &&
     schema.anyOf.some((t) => (t as JsonSchemaType).type === "boolean") &&
     schema.anyOf.some((t) => (t as JsonSchemaType).type === "null")
   ) {
     return { ...schema, type: "boolean", anyOf: undefined };
   }
 
-  // Handle array type with string and null
+  // Handle anyOf with exactly number and null (FastMCP pattern)
+  if (
+    schema.anyOf &&
+    schema.anyOf.length === 2 &&
+    schema.anyOf.some((t) => (t as JsonSchemaType).type === "number") &&
+    schema.anyOf.some((t) => (t as JsonSchemaType).type === "null")
+  ) {
+    return { ...schema, type: "number", anyOf: undefined };
+  }
+
+  // Handle anyOf with exactly integer and null (FastMCP pattern)
+  if (
+    schema.anyOf &&
+    schema.anyOf.length === 2 &&
+    schema.anyOf.some((t) => (t as JsonSchemaType).type === "integer") &&
+    schema.anyOf.some((t) => (t as JsonSchemaType).type === "null")
+  ) {
+    return { ...schema, type: "integer", anyOf: undefined };
+  }
+
+  // Handle array type with exactly string and null
   if (
     Array.isArray(schema.type) &&
+    schema.type.length === 2 &&
     schema.type.includes("string") &&
     schema.type.includes("null")
   ) {
     return { ...schema, type: "string" };
   }
 
-  // Handle array type with boolean and null
+  // Handle array type with exactly boolean and null
   if (
     Array.isArray(schema.type) &&
+    schema.type.length === 2 &&
     schema.type.includes("boolean") &&
     schema.type.includes("null")
   ) {
     return { ...schema, type: "boolean" };
+  }
+
+  // Handle array type with exactly number and null
+  if (
+    Array.isArray(schema.type) &&
+    schema.type.length === 2 &&
+    schema.type.includes("number") &&
+    schema.type.includes("null")
+  ) {
+    return { ...schema, type: "number" };
+  }
+
+  // Handle array type with exactly integer and null
+  if (
+    Array.isArray(schema.type) &&
+    schema.type.length === 2 &&
+    schema.type.includes("integer") &&
+    schema.type.includes("null")
+  ) {
+    return { ...schema, type: "integer" };
   }
 
   return schema;
