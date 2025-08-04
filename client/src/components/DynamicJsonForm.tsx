@@ -191,7 +191,13 @@ const DynamicJsonForm = ({
     const isRequired =
       parentSchema?.required?.includes(propertyName || "") ?? false;
 
-    switch (propSchema.type) {
+    let fieldType = propSchema.type;
+    if (Array.isArray(fieldType)) {
+      // Of the possible types, find the first non-null type to determine the control to render
+      fieldType = fieldType.find((t) => t !== "null") ?? fieldType[0];
+    }
+
+    switch (fieldType) {
       case "string": {
         if (
           propSchema.oneOf &&
@@ -347,6 +353,8 @@ const DynamicJsonForm = ({
             required={isRequired}
           />
         );
+      case "null":
+        return null;
       case "object":
         if (!propSchema.properties) {
           return (
