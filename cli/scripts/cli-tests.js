@@ -744,8 +744,8 @@ async function runTests() {
     "tools/list",
   );
 
-  // Test 26: Config with SSE transport type (CLI mode)
-  await runBasicTest(
+  // Test 26: Config with SSE transport type (CLI mode) - expects connection error
+  await runErrorTest(
     "config_sse_type_cli",
     "--config",
     sseConfigPath,
@@ -756,8 +756,8 @@ async function runTests() {
     "tools/list",
   );
 
-  // Test 27: Config with streamable-http transport type (CLI mode)
-  await runBasicTest(
+  // Test 27: Config with streamable-http transport type (CLI mode) - expects connection error
+  await runErrorTest(
     "config_http_type_cli",
     "--config",
     httpConfigPath,

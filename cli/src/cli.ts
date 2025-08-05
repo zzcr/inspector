@@ -122,7 +122,18 @@ async function runCli(args: Args): Promise<void> {
   });
 
   try {
-    await spawnPromise("node", [cliPath, args.command, ...args.args], {
+    // Build CLI arguments
+    const cliArgs = [cliPath];
+
+    // Add transport flag if specified
+    if (args.transport && args.transport !== "stdio") {
+      cliArgs.push("--transport", args.transport);
+    }
+
+    // Add command and remaining args
+    cliArgs.push(args.command, ...args.args);
+
+    await spawnPromise("node", cliArgs, {
       env: { ...process.env, ...args.envArgs },
       signal: abort.signal,
       echoOutput: true,
@@ -268,7 +279,7 @@ function parseArgs(): Args {
       };
     } else if (config.type === "sse" || config.type === "streamable-http") {
       return {
-        command: "",
+        command: config.url,
         args: finalArgs,
         envArgs: options.e || {},
         cli: options.cli || false,
