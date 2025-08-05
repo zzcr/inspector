@@ -220,14 +220,38 @@ function parseArgs(): Args {
   // Add back any arguments that came after --
   const finalArgs = [...remainingArgs, ...postArgs];
 
-  // Validate that config and server are provided together
-  if (
-    (options.config && !options.server) ||
-    (!options.config && options.server)
-  ) {
+  // Validate config and server options
+  if (!options.config && options.server) {
     throw new Error(
-      "Both --config and --server must be provided together. If you specify one, you must specify the other.",
+      "--server requires --config to be specified",
     );
+  }
+
+  // If config is provided without server, try to auto-select
+  if (options.config && !options.server) {
+    const configContent = fs.readFileSync(
+      path.isAbsolute(options.config)
+        ? options.config
+        : path.resolve(process.cwd(), options.config),
+      "utf8"
+    );
+    const parsedConfig = JSON.parse(configContent);
+    const servers = Object.keys(parsedConfig.mcpServers || {});
+    
+    if (servers.includes("default-server")) {
+      // Use default-server if it exists
+      options.server = "default-server";
+    } else if (servers.length === 1) {
+      // Use the only server if there's just one
+      options.server = servers[0];
+    } else if (servers.length === 0) {
+      throw new Error("No servers found in config file");
+    } else {
+      // Multiple servers, no default-server
+      throw new Error(
+        `Multiple servers found in config file. Please specify one with --server.\nAvailable servers: ${servers.join(", ")}`
+      );
+    }
   }
 
   // If config file is specified, load and use the options from the file. We must merge the args

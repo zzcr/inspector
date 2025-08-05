@@ -781,6 +781,102 @@ async function runTests() {
   );
 
   console.log(
+    `\n${colors.YELLOW}=== Running Default Server Tests ===${colors.NC}`,
+  );
+
+  // Create config with single server for auto-selection
+  const singleServerConfigPath = path.join(TEMP_DIR, "single-server-config.json");
+  fs.writeFileSync(
+    singleServerConfigPath,
+    JSON.stringify(
+      {
+        mcpServers: {
+          "only-server": {
+            command: "npx",
+            args: ["@modelcontextprotocol/server-everything"],
+          },
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  // Create config with default-server
+  const defaultServerConfigPath = path.join(TEMP_DIR, "default-server-config.json");
+  fs.writeFileSync(
+    defaultServerConfigPath,
+    JSON.stringify(
+      {
+        mcpServers: {
+          "default-server": {
+            command: "npx",
+            args: ["@modelcontextprotocol/server-everything"],
+          },
+          "other-server": {
+            command: "node",
+            args: ["other.js"],
+          },
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  // Create config with multiple servers (no default)
+  const multiServerConfigPath = path.join(TEMP_DIR, "multi-server-config.json");
+  fs.writeFileSync(
+    multiServerConfigPath,
+    JSON.stringify(
+      {
+        mcpServers: {
+          "server1": {
+            command: "npx",
+            args: ["@modelcontextprotocol/server-everything"],
+          },
+          "server2": {
+            command: "node",
+            args: ["other.js"],
+          },
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  // Test 29: Config with single server auto-selection
+  await runBasicTest(
+    "single_server_auto_select",
+    "--config",
+    singleServerConfigPath,
+    "--cli",
+    "--method",
+    "tools/list",
+  );
+
+  // Test 30: Config with default-server auto-selection
+  await runBasicTest(
+    "default_server_auto_select",
+    "--config",
+    defaultServerConfigPath,
+    "--cli",
+    "--method",
+    "tools/list",
+  );
+
+  // Test 31: Config with multiple servers and no default (should fail)
+  await runErrorTest(
+    "multi_server_no_default",
+    "--config",
+    multiServerConfigPath,
+    "--cli",
+    "--method",
+    "tools/list",
+  );
+
+  console.log(
     `\n${colors.YELLOW}=== Running HTTP Transport Tests ===${colors.NC}`,
   );
 
@@ -799,7 +895,7 @@ async function runTests() {
 
   await new Promise((resolve) => setTimeout(resolve, 3000));
 
-  // Test 29: HTTP transport inferred from URL ending with /mcp
+  // Test 32: HTTP transport inferred from URL ending with /mcp
   await runBasicTest(
     "http_transport_inferred",
     "http://127.0.0.1:3001/mcp",
@@ -808,7 +904,7 @@ async function runTests() {
     "tools/list",
   );
 
-  // Test 30: HTTP transport with explicit --transport http flag
+  // Test 33: HTTP transport with explicit --transport http flag
   await runBasicTest(
     "http_transport_with_explicit_flag",
     "http://127.0.0.1:3001/mcp",
@@ -819,7 +915,7 @@ async function runTests() {
     "tools/list",
   );
 
-  // Test 31: HTTP transport with suffix and --transport http flag
+  // Test 34: HTTP transport with suffix and --transport http flag
   await runBasicTest(
     "http_transport_with_explicit_flag_and_suffix",
     "http://127.0.0.1:3001/mcp",
@@ -830,7 +926,7 @@ async function runTests() {
     "tools/list",
   );
 
-  // Test 32: SSE transport given to HTTP server (should fail)
+  // Test 35: SSE transport given to HTTP server (should fail)
   await runErrorTest(
     "sse_transport_given_to_http_server",
     "http://127.0.0.1:3001",
@@ -841,7 +937,7 @@ async function runTests() {
     "tools/list",
   );
 
-  // Test 33: HTTP transport without URL (should fail)
+  // Test 36: HTTP transport without URL (should fail)
   await runErrorTest(
     "http_transport_without_url",
     "--transport",
@@ -851,7 +947,7 @@ async function runTests() {
     "tools/list",
   );
 
-  // Test 34: SSE transport without URL (should fail)
+  // Test 37: SSE transport without URL (should fail)
   await runErrorTest(
     "sse_transport_without_url",
     "--transport",
