@@ -18,8 +18,6 @@ function getClientUrl(
   authDisabled,
   sessionToken,
   serverPort,
-  transport,
-  serverUrl,
 ) {
   const host = process.env.HOST || "localhost";
   const baseUrl = `http://${host}:${port}`;
@@ -30,12 +28,6 @@ function getClientUrl(
   }
   if (!authDisabled) {
     params.set("MCP_PROXY_AUTH_TOKEN", sessionToken);
-  }
-  if (transport) {
-    params.set("transport", transport);
-  }
-  if (serverUrl) {
-    params.set("serverUrl", serverUrl);
   }
   return params.size > 0 ? `${baseUrl}/?${params.toString()}` : baseUrl;
 }
@@ -136,8 +128,6 @@ async function startDevClient(clientOptions) {
     sessionToken,
     abort,
     cancelled,
-    transport,
-    serverUrl,
   } = clientOptions;
   const clientCommand = "npx";
   const host = process.env.HOST || "localhost";
@@ -155,8 +145,6 @@ async function startDevClient(clientOptions) {
     authDisabled,
     sessionToken,
     SERVER_PORT,
-    transport,
-    serverUrl,
   );
 
   // Give vite time to start before opening or logging the URL
@@ -190,8 +178,6 @@ async function startProdClient(clientOptions) {
     sessionToken,
     abort,
     cancelled,
-    transport,
-    serverUrl,
   } = clientOptions;
   const inspectorClientPath = resolve(
     __dirname,
@@ -206,8 +192,6 @@ async function startProdClient(clientOptions) {
     authDisabled,
     sessionToken,
     SERVER_PORT,
-    transport,
-    serverUrl,
   );
 
   await spawnPromise("node", [inspectorClientPath], {
@@ -229,8 +213,6 @@ async function main() {
   let command = null;
   let parsingFlags = true;
   let isDev = false;
-  let transport = null;
-  let serverUrl = null;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -256,10 +238,6 @@ async function main() {
       } else {
         envVars[envVar] = "";
       }
-    } else if (parsingFlags && arg === "--transport" && i + 1 < args.length) {
-      transport = args[++i];
-    } else if (parsingFlags && arg === "--server-url" && i + 1 < args.length) {
-      serverUrl = args[++i];
     } else if (!command && !isDev) {
       command = arg;
     } else if (!isDev) {
@@ -319,8 +297,6 @@ async function main() {
         sessionToken,
         abort,
         cancelled,
-        transport,
-        serverUrl,
       };
 
       await (isDev
