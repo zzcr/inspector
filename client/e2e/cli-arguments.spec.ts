@@ -7,7 +7,9 @@ test.describe("CLI Arguments @cli", () => {
     page,
   }) => {
     // Simulate: npx . --transport sse --server-url http://localhost:3000/sse
-    await page.goto("http://localhost:6274/?transport=sse&serverUrl=http://localhost:3000/sse");
+    await page.goto(
+      "http://localhost:6274/?transport=sse&serverUrl=http://localhost:3000/sse",
+    );
 
     // Wait for the Transport Type dropdown to be visible
     const selectTrigger = page.getByLabel("Transport Type");
@@ -26,7 +28,9 @@ test.describe("CLI Arguments @cli", () => {
     page,
   }) => {
     // Simulate config with streamable-http transport
-    await page.goto("http://localhost:6274/?transport=streamable-http&serverUrl=http://localhost:3000/mcp");
+    await page.goto(
+      "http://localhost:6274/?transport=streamable-http&serverUrl=http://localhost:3000/mcp",
+    );
 
     // Wait for the Transport Type dropdown to be visible
     const selectTrigger = page.getByLabel("Transport Type");

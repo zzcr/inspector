@@ -13,12 +13,7 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms, true));
 }
 
-function getClientUrl(
-  port,
-  authDisabled,
-  sessionToken,
-  serverPort,
-) {
+function getClientUrl(port, authDisabled, sessionToken, serverPort) {
   const host = process.env.HOST || "localhost";
   const baseUrl = `http://${host}:${port}`;
 

@@ -785,7 +785,10 @@ async function runTests() {
   );
 
   // Create config with single server for auto-selection
-  const singleServerConfigPath = path.join(TEMP_DIR, "single-server-config.json");
+  const singleServerConfigPath = path.join(
+    TEMP_DIR,
+    "single-server-config.json",
+  );
   fs.writeFileSync(
     singleServerConfigPath,
     JSON.stringify(
@@ -803,7 +806,10 @@ async function runTests() {
   );
 
   // Create config with default-server
-  const defaultServerConfigPath = path.join(TEMP_DIR, "default-server-config.json");
+  const defaultServerConfigPath = path.join(
+    TEMP_DIR,
+    "default-server-config.json",
+  );
   fs.writeFileSync(
     defaultServerConfigPath,
     JSON.stringify(
@@ -831,11 +837,11 @@ async function runTests() {
     JSON.stringify(
       {
         mcpServers: {
-          "server1": {
+          server1: {
             command: "npx",
             args: ["@modelcontextprotocol/server-everything"],
           },
-          "server2": {
+          server2: {
             command: "node",
             args: ["other.js"],
           },

@@ -239,6 +239,7 @@ Example server configuration file:
 The inspector automatically detects the transport type from your config file. You can specify different transport types:
 
 **STDIO (default):**
+
 ```json
 {
   "mcpServers": {
@@ -252,6 +253,7 @@ The inspector automatically detects the transport type from your config file. Yo
 ```
 
 **SSE (Server-Sent Events):**
+
 ```json
 {
   "mcpServers": {
@@ -264,6 +266,7 @@ The inspector automatically detects the transport type from your config file. Yo
 ```
 
 **Streamable HTTP:**
+
 ```json
 {
   "mcpServers": {
@@ -280,12 +283,14 @@ The inspector automatically detects the transport type from your config file. Yo
 You can launch the inspector without specifying a server name if your config has:
 
 1. **A single server** - automatically selected:
+
 ```bash
 # Automatically uses "my-server" if it's the only one
 npx @modelcontextprotocol/inspector --config config.json
 ```
 
 2. **A server named "default-server"** - automatically selected:
+
 ```json
 {
   "mcpServers": {

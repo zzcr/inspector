@@ -222,9 +222,7 @@ function parseArgs(): Args {
 
   // Validate config and server options
   if (!options.config && options.server) {
-    throw new Error(
-      "--server requires --config to be specified",
-    );
+    throw new Error("--server requires --config to be specified");
   }
 
   // If config is provided without server, try to auto-select
@@ -233,11 +231,11 @@ function parseArgs(): Args {
       path.isAbsolute(options.config)
         ? options.config
         : path.resolve(process.cwd(), options.config),
-      "utf8"
+      "utf8",
     );
     const parsedConfig = JSON.parse(configContent);
     const servers = Object.keys(parsedConfig.mcpServers || {});
-    
+
     if (servers.includes("default-server")) {
       // Use default-server if it exists
       options.server = "default-server";
@@ -249,7 +247,7 @@ function parseArgs(): Args {
     } else {
       // Multiple servers, no default-server
       throw new Error(
-        `Multiple servers found in config file. Please specify one with --server.\nAvailable servers: ${servers.join(", ")}`
+        `Multiple servers found in config file. Please specify one with --server.\nAvailable servers: ${servers.join(", ")}`,
       );
     }
   }
