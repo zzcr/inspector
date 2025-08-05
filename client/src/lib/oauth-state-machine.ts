@@ -89,33 +89,26 @@ export const oauthTransitions: Record<OAuthStep, StateTransition> = {
       }
 
       // Try DCR first, with static client as fallback
+      let fullInformation;
       try {
-        const fullInformation = await registerClient(context.serverUrl, {
+        fullInformation = await registerClient(context.serverUrl, {
           metadata,
           clientMetadata,
         });
-
         context.provider.saveClientInformation(fullInformation);
-        context.updateState({
-          oauthClientInfo: fullInformation,
-          oauthStep: "authorization_redirect",
-        });
-        console.log({ fullInformation });
-        return;
       } catch (dcrError) {
-        console.error(dcrError);
-
         // DCR failed, fallback to preregistered client
-        const existingClientInfo = await context.provider.clientInformation();
-        if (!existingClientInfo) {
+        fullInformation = await context.provider.clientInformation();
+        if (!fullInformation) {
           console.error("Neither dynamic client registration or preregistered client information was found");
           throw dcrError;
         }
-        context.updateState({
-          oauthClientInfo: existingClientInfo,
-          oauthStep: "authorization_redirect",
-        });
       }
+
+      context.updateState({
+        oauthClientInfo: fullInformation,
+        oauthStep: "authorization_redirect",
+      });
     },
   },
 
