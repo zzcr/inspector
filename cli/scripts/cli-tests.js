@@ -744,26 +744,28 @@ async function runTests() {
     "tools/list",
   );
 
-  // Test 26: Config with SSE transport type (should pass transport to client)
+  // Test 26: Config with SSE transport type (CLI mode)
   await runBasicTest(
-    "config_sse_type",
+    "config_sse_type_cli",
     "--config",
     sseConfigPath,
     "--server",
     "test-sse",
-    "echo",
-    "test",
+    "--cli",
+    "--method",
+    "tools/list",
   );
 
-  // Test 27: Config with streamable-http transport type
+  // Test 27: Config with streamable-http transport type (CLI mode)
   await runBasicTest(
-    "config_http_type",
+    "config_http_type_cli",
     "--config",
     httpConfigPath,
     "--server",
     "test-http",
-    "echo",
-    "test",
+    "--cli",
+    "--method",
+    "tools/list",
   );
 
   // Test 28: Legacy config without type field (backward compatibility)
