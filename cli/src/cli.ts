@@ -23,6 +23,7 @@ type CliOptions = {
   config?: string;
   server?: string;
   cli?: boolean;
+  transport?: string;
 };
 
 type ServerConfig =
@@ -127,7 +128,9 @@ async function runCli(args: Args): Promise<void> {
 
     // Add transport flag if specified
     if (args.transport && args.transport !== "stdio") {
-      cliArgs.push("--transport", args.transport);
+      // Convert streamable-http back to http for CLI mode
+      const cliTransport = args.transport === "streamable-http" ? "http" : args.transport;
+      cliArgs.push("--transport", cliTransport);
     }
 
     // Add command and remaining args
@@ -220,7 +223,8 @@ function parseArgs(): Args {
     )
     .option("--config <path>", "config file path")
     .option("--server <n>", "server name from config file")
-    .option("--cli", "enable CLI mode");
+    .option("--cli", "enable CLI mode")
+    .option("--transport <type>", "transport type (stdio, sse, http)");
 
   // Parse only the arguments before --
   program.parse(preArgs);
@@ -301,12 +305,19 @@ function parseArgs(): Args {
   // Otherwise use command line arguments
   const command = finalArgs[0] || "";
   const args = finalArgs.slice(1);
+  
+  // Map "http" shorthand to "streamable-http"
+  let transport = options.transport;
+  if (transport === "http") {
+    transport = "streamable-http";
+  }
 
   return {
     command,
     args,
     envArgs: options.e || {},
     cli: options.cli || false,
+    transport: transport as "stdio" | "sse" | "streamable-http" | undefined,
   };
 }
 
