@@ -130,7 +130,8 @@ async function runCli(args: Args): Promise<void> {
     // Add transport flag if specified
     if (args.transport && args.transport !== "stdio") {
       // Convert streamable-http back to http for CLI mode
-      const cliTransport = args.transport === "streamable-http" ? "http" : args.transport;
+      const cliTransport =
+        args.transport === "streamable-http" ? "http" : args.transport;
       cliArgs.push("--transport", cliTransport);
     }
 
@@ -307,7 +308,7 @@ function parseArgs(): Args {
   // Otherwise use command line arguments
   const command = finalArgs[0] || "";
   const args = finalArgs.slice(1);
-  
+
   // Map "http" shorthand to "streamable-http"
   let transport = options.transport;
   if (transport === "http") {
