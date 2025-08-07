@@ -862,9 +862,9 @@ async function runTests() {
     "tools/list",
   );
 
-  // Test 30: Config with default-server auto-selection
-  await runBasicTest(
-    "default_server_auto_select",
+  // Test 30: Config with default-server should now require explicit selection (multiple servers)
+  await runErrorTest(
+    "default_server_requires_explicit_selection",
     "--config",
     defaultServerConfigPath,
     "--cli",
