@@ -24,6 +24,7 @@ type CliOptions = {
   server?: string;
   cli?: boolean;
   transport?: string;
+  serverUrl?: string;
 };
 
 type ServerConfig =
@@ -224,7 +225,8 @@ function parseArgs(): Args {
     .option("--config <path>", "config file path")
     .option("--server <n>", "server name from config file")
     .option("--cli", "enable CLI mode")
-    .option("--transport <type>", "transport type (stdio, sse, http)");
+    .option("--transport <type>", "transport type (stdio, sse, http)")
+    .option("--server-url <url>", "server URL for SSE/HTTP transport");
 
   // Parse only the arguments before --
   program.parse(preArgs);
@@ -318,6 +320,7 @@ function parseArgs(): Args {
     envArgs: options.e || {},
     cli: options.cli || false,
     transport: transport as "stdio" | "sse" | "streamable-http" | undefined,
+    serverUrl: options.serverUrl,
   };
 }
 
