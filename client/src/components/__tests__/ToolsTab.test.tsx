@@ -671,8 +671,8 @@ describe("ToolsTab", () => {
 
       // Enter invalid JSON in the first textarea
       const configTextarea = textareas[0];
-      fireEvent.change(configTextarea, { 
-        target: { value: '{ "invalid": json }' } 
+      fireEvent.change(configTextarea, {
+        target: { value: '{ "invalid": json }' },
       });
 
       // Try to run the tool
@@ -695,15 +695,18 @@ describe("ToolsTab", () => {
 
       // Find JSON editor textareas
       const textareas = screen.getAllByRole("textbox");
-      
+
       // Enter valid JSON in the first textarea
-      fireEvent.change(textareas[0], { 
-        target: { value: '{ "config": { "setting": "value" }, "data": ["item1", "item2"] }' } 
+      fireEvent.change(textareas[0], {
+        target: {
+          value:
+            '{ "config": { "setting": "value" }, "data": ["item1", "item2"] }',
+        },
       });
 
       // Wait for debounced updates
       await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 350));
+        await new Promise((resolve) => setTimeout(resolve, 350));
       });
 
       // Try to run the tool
@@ -725,10 +728,13 @@ describe("ToolsTab", () => {
       });
 
       const textareas = screen.getAllByRole("textbox");
-      
+
       // Enter invalid JSON that contains both valid and invalid parts
-      fireEvent.change(textareas[0], { 
-        target: { value: '{ "config": { "setting": "value" }, "data": ["unclosed array" }' } 
+      fireEvent.change(textareas[0], {
+        target: {
+          value:
+            '{ "config": { "setting": "value" }, "data": ["unclosed array" }',
+        },
       });
 
       // Try to run the tool
@@ -764,7 +770,7 @@ describe("ToolsTab", () => {
       // Fill in the simple parameters
       const messageInput = screen.getByRole("textbox");
       const countInput = screen.getByRole("spinbutton");
-      
+
       fireEvent.change(messageInput, { target: { value: "test message" } });
       fireEvent.change(countInput, { target: { value: "5" } });
 
@@ -775,10 +781,13 @@ describe("ToolsTab", () => {
       });
 
       // Tool should have been called successfully (no JSON validation needed)
-      expect(mockCallTool).toHaveBeenCalledWith(simpleToolWithStringParam.name, {
-        message: "test message",
-        count: 5,
-      });
+      expect(mockCallTool).toHaveBeenCalledWith(
+        simpleToolWithStringParam.name,
+        {
+          message: "test message",
+          count: 5,
+        },
+      );
     });
 
     it("should handle empty JSON parameters correctly", async () => {
@@ -790,9 +799,9 @@ describe("ToolsTab", () => {
       });
 
       const textareas = screen.getAllByRole("textbox");
-      
+
       // Clear the textarea (empty JSON should be valid)
-      fireEvent.change(textareas[0], { target: { value: '' } });
+      fireEvent.change(textareas[0], { target: { value: "" } });
 
       // Try to run the tool
       const runButton = screen.getByRole("button", { name: /run tool/i });
