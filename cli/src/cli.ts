@@ -254,16 +254,13 @@ function parseArgs(): Args {
     const parsedConfig = JSON.parse(configContent);
     const servers = Object.keys(parsedConfig.mcpServers || {});
 
-    if (servers.includes("default-server")) {
-      // Use default-server if it exists
-      options.server = "default-server";
-    } else if (servers.length === 1) {
+    if (servers.length === 1) {
       // Use the only server if there's just one
       options.server = servers[0];
     } else if (servers.length === 0) {
       throw new Error("No servers found in config file");
     } else {
-      // Multiple servers, no default-server
+      // Multiple servers, require explicit selection
       throw new Error(
         `Multiple servers found in config file. Please specify one with --server.\nAvailable servers: ${servers.join(", ")}`,
       );
