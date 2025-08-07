@@ -286,7 +286,7 @@ You can launch the inspector without specifying a server name if your config has
 
 ```bash
 # Automatically uses "my-server" if it's the only one
-npx @modelcontextprotocol/inspector --config config.json
+npx @modelcontextprotocol/inspector --config mcp.json
 ```
 
 2. **A server named "default-server"** - automatically selected:
