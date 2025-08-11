@@ -88,20 +88,14 @@ export const oauthTransitions: Record<OAuthStep, StateTransition> = {
         clientMetadata.scope = scopesSupported.join(" ");
       }
 
-      // Try DCR first, with static client as fallback
-      let fullInformation;
-      try {
+      // Try Static client first, with DCR as fallback
+      let fullInformation = await context.provider.clientInformation();
+      if (!fullInformation) {
         fullInformation = await registerClient(context.serverUrl, {
           metadata,
           clientMetadata,
         });
         context.provider.saveClientInformation(fullInformation);
-      } catch (dcrError) {
-        // DCR failed, fallback to preregistered client
-        fullInformation = await context.provider.clientInformation();
-        if (!fullInformation) {
-          throw dcrError;
-        }
       }
 
       context.updateState({
