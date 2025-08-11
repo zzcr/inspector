@@ -100,7 +100,6 @@ export const oauthTransitions: Record<OAuthStep, StateTransition> = {
         // DCR failed, fallback to preregistered client
         fullInformation = await context.provider.clientInformation();
         if (!fullInformation) {
-          console.error("Neither dynamic client registration or preregistered client information was found");
           throw dcrError;
         }
       }
