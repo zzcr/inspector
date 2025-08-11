@@ -76,10 +76,6 @@ export class InspectorOAuthClientProvider implements OAuthClientProvider {
     return window.location.origin + "/oauth/callback";
   }
 
-  state(): string | Promise<string> {
-    return generateOAuthState();
-  }
-
   get clientMetadata(): OAuthClientMetadata {
     return {
       redirect_uris: [this.redirectUrl],
@@ -89,6 +85,10 @@ export class InspectorOAuthClientProvider implements OAuthClientProvider {
       client_name: "MCP Inspector",
       client_uri: "https://github.com/modelcontextprotocol/inspector",
     };
+  }
+
+  state(): string | Promise<string> {
+    return generateOAuthState();
   }
 
   async clientInformation() {
