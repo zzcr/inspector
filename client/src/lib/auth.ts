@@ -8,6 +8,7 @@ import {
   OAuthMetadata,
 } from "@modelcontextprotocol/sdk/shared/auth.js";
 import { SESSION_KEYS, getServerSpecificKey } from "./constants";
+import { generateOAuthState } from "@/utils/oauthUtils";
 
 export const getClientInformationFromSessionStorage = async ({
   serverUrl,
@@ -73,6 +74,10 @@ export class InspectorOAuthClientProvider implements OAuthClientProvider {
 
   get redirectUrl() {
     return window.location.origin + "/oauth/callback";
+  }
+
+  state(): string | Promise<string> {
+    return generateOAuthState();
   }
 
   get clientMetadata(): OAuthClientMetadata {
