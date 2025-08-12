@@ -439,6 +439,103 @@ describe("AuthDebugger", () => {
     });
   });
 
+  describe("Client Registration behavior", () => {
+    it("uses preregistered (static) client information without calling DCR", async () => {
+      const preregClientInfo = {
+        client_id: "static_client_id",
+        client_secret: "static_client_secret",
+        redirect_uris: ["http://localhost:3000/oauth/callback/debug"],
+      };
+
+      // Return preregistered client info for the server-specific key
+      sessionStorageMock.getItem.mockImplementation((key) => {
+        if (
+          key ===
+          `[${defaultProps.serverUrl}] ${SESSION_KEYS.PREREGISTERED_CLIENT_INFORMATION}`
+        ) {
+          return JSON.stringify(preregClientInfo);
+        }
+        return null;
+      });
+
+      const updateAuthState = jest.fn();
+
+      await act(async () => {
+        renderAuthDebugger({
+          updateAuthState,
+          authState: {
+            ...defaultAuthState,
+            isInitiatingAuth: false,
+            oauthStep: "client_registration",
+            oauthMetadata: mockOAuthMetadata as unknown as OAuthMetadata,
+          },
+        });
+      });
+
+      // Proceed from client_registration → authorization_redirect
+      await act(async () => {
+        fireEvent.click(screen.getByText("Continue"));
+      });
+
+      // Should NOT attempt dynamic client registration
+      expect(mockRegisterClient).not.toHaveBeenCalled();
+
+      // Should advance with the preregistered client info
+      expect(updateAuthState).toHaveBeenCalledWith(
+        expect.objectContaining({
+          oauthClientInfo: expect.objectContaining({
+            client_id: "static_client_id",
+          }),
+          oauthStep: "authorization_redirect",
+        }),
+      );
+    });
+
+    it("falls back to DCR when no static client information is available", async () => {
+      // No preregistered or dynamic client info present in session storage
+      sessionStorageMock.getItem.mockImplementation(() => null);
+
+      // DCR returns a new client
+      mockRegisterClient.mockResolvedValueOnce(mockOAuthClientInfo);
+
+      const updateAuthState = jest.fn();
+
+      await act(async () => {
+        renderAuthDebugger({
+          updateAuthState,
+          authState: {
+            ...defaultAuthState,
+            isInitiatingAuth: false,
+            oauthStep: "client_registration",
+            oauthMetadata: mockOAuthMetadata as unknown as OAuthMetadata,
+          },
+        });
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByText("Continue"));
+      });
+
+      expect(mockRegisterClient).toHaveBeenCalledTimes(1);
+
+      // Should save and advance with the DCR client info
+      expect(updateAuthState).toHaveBeenCalledWith(
+        expect.objectContaining({
+          oauthClientInfo: expect.objectContaining({
+            client_id: "test_client_id",
+          }),
+          oauthStep: "authorization_redirect",
+        }),
+      );
+
+      // Verify the dynamically registered client info was persisted
+      expect(sessionStorage.setItem).toHaveBeenCalledWith(
+        `[${defaultProps.serverUrl}] ${SESSION_KEYS.CLIENT_INFORMATION}`,
+        expect.any(String),
+      );
+    });
+  });
+
   describe("OAuth State Persistence", () => {
     it("should store auth state to sessionStorage before redirect in Quick OAuth Flow", async () => {
       const updateAuthState = jest.fn();
