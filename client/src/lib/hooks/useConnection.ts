@@ -581,7 +581,11 @@ export function useConnection({
       setMcpClient(client);
       setConnectionStatus("connected");
     } catch (e) {
-      if (lastRequest === "logging/setLevel" && e instanceof McpError && e.code === ErrorCode.MethodNotFound) {
+      if (
+        lastRequest === "logging/setLevel" &&
+        e instanceof McpError &&
+        e.code === ErrorCode.MethodNotFound
+      ) {
         toast({
           title: "Error",
           description: `Server declares logging capability but doesn't implement method: "${lastRequest}"`,
