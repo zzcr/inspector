@@ -1,7 +1,7 @@
 import { OAuthStep, AuthDebuggerState } from "./auth-types";
 import { DebugInspectorOAuthClientProvider } from "./auth";
 import {
-  discoverOAuthMetadata,
+  discoverAuthorizationServerMetadata,
   registerClient,
   startAuthorization,
   exchangeAuthorization,
@@ -56,7 +56,7 @@ export const oauthTransitions: Record<OAuthStep, StateTransition> = {
         resourceMetadata ?? undefined,
       );
 
-      const metadata = await discoverOAuthMetadata(authServerUrl);
+      const metadata = await discoverAuthorizationServerMetadata(authServerUrl);
       if (!metadata) {
         throw new Error("Failed to discover OAuth metadata");
       }
