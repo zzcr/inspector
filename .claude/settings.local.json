@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh api:*)",
+      "Bash(npm run build-client:*)",
+      "Bash(gh issue view:*)",
+      "Bash(npm run build-server:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run prettier-fix:*)",
+      "Bash(npm run build:*)"
+    ],
+    "deny": []
+  }
+}
