@@ -46,6 +46,9 @@ const OAuthDebugCallback = ({ onConnect }: OAuthCallbackProps) => {
       if (storedState) {
         try {
           restoredState = JSON.parse(storedState);
+          if (typeof restoredState.resource === "string") {
+            restoredState.resource = new URL(restoredState.resource);
+          }
           // Clean up the stored state
           sessionStorage.removeItem(SESSION_KEYS.AUTH_DEBUGGER_STATE);
         } catch (e) {
