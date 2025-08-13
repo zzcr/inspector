@@ -89,12 +89,16 @@ export const oauthTransitions: Record<OAuthStep, StateTransition> = {
         clientMetadata.scope = scopesSupported.join(" ");
       }
 
-      const fullInformation = await registerClient(context.serverUrl, {
-        metadata,
-        clientMetadata,
-      });
+      // Try Static client first, with DCR as fallback
+      let fullInformation = await context.provider.clientInformation();
+      if (!fullInformation) {
+        fullInformation = await registerClient(context.serverUrl, {
+          metadata,
+          clientMetadata,
+        });
+        context.provider.saveClientInformation(fullInformation);
+      }
 
-      context.provider.saveClientInformation(fullInformation);
       context.updateState({
         oauthClientInfo: fullInformation,
         oauthStep: "authorization_redirect",
