@@ -101,6 +101,7 @@ describe("discoverScopes", () => {
     {
       name: "returns undefined when scopes_supported missing",
       mockResolves: (() => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { scopes_supported, ...rest } = baseMetadata;
         return rest;
       })(),
