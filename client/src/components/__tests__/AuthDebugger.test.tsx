@@ -77,8 +77,25 @@ jest.mock("@/lib/auth", () => ({
       response_types: ["code"],
       client_name: "MCP Inspector",
     },
-    clientInformation: jest.fn(),
-    saveClientInformation: jest.fn(),
+    clientInformation: jest.fn().mockImplementation(async () => {
+      const serverUrl = "https://example.com/mcp";
+      const preregisteredKey = `[${serverUrl}] ${SESSION_KEYS.PREREGISTERED_CLIENT_INFORMATION}`;
+      const preregisteredData = sessionStorage.getItem(preregisteredKey);
+      if (preregisteredData) {
+        return JSON.parse(preregisteredData);
+      }
+      const dynamicKey = `[${serverUrl}] ${SESSION_KEYS.CLIENT_INFORMATION}`;
+      const dynamicData = sessionStorage.getItem(dynamicKey);
+      if (dynamicData) {
+        return JSON.parse(dynamicData);
+      }
+      return undefined;
+    }),
+    saveClientInformation: jest.fn().mockImplementation((clientInfo) => {
+      const serverUrl = "https://example.com/mcp";
+      const key = `[${serverUrl}] ${SESSION_KEYS.CLIENT_INFORMATION}`;
+      sessionStorage.setItem(key, JSON.stringify(clientInfo));
+    }),
     saveTokens: jest.fn(),
     redirectToAuthorization: jest.fn(),
     saveCodeVerifier: jest.fn(),
