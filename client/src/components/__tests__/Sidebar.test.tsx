@@ -878,4 +878,36 @@ describe("Sidebar Environment Variables", () => {
       expect(mockClipboardWrite).toHaveBeenCalledWith(expectedConfig);
     });
   });
+
+  describe("Command and arguments", () => {
+    it("should trim whitespace from command input on blur", () => {
+      const setCommand = jest.fn();
+      renderSidebar({ command: "  node server.js  ", setCommand });
+
+      const commandInput = screen.getByLabelText("Command");
+
+      fireEvent.blur(commandInput);
+      expect(setCommand).toHaveBeenLastCalledWith("node server.js");
+    });
+
+    it("should handle whitespace-only command input on blur", () => {
+      const setCommand = jest.fn();
+      renderSidebar({ command: "   ", setCommand });
+
+      const commandInput = screen.getByLabelText("Command");
+
+      fireEvent.blur(commandInput);
+      expect(setCommand).toHaveBeenLastCalledWith("");
+    });
+
+    it("should not affect command without surrounding whitespace", () => {
+      const setCommand = jest.fn();
+      renderSidebar({ command: "node", setCommand });
+
+      const commandInput = screen.getByLabelText("Command");
+
+      fireEvent.blur(commandInput);
+      expect(setCommand).toHaveBeenLastCalledWith("node");
+    });
+  });
 });
