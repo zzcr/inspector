@@ -392,11 +392,6 @@ describe("Sidebar", () => {
   });
 
   describe("Copy Server Features", () => {
-    beforeEach(() => {
-      jest.clearAllMocks();
-      jest.clearAllTimers();
-    });
-
     const getCopyButtons = () => {
       return {
         serverEntry: screen.getByRole("button", { name: /server entry/i }),
