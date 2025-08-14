@@ -31,7 +31,7 @@ Object.defineProperty(navigator, "clipboard", {
 // Setup fake timers
 jest.useFakeTimers();
 
-describe("Sidebar Environment Variables", () => {
+describe("Sidebar", () => {
   const defaultProps = {
     connectionStatus: "disconnected" as const,
     transportType: "stdio" as const,
@@ -362,7 +362,7 @@ describe("Sidebar Environment Variables", () => {
         expect(setEnv).toHaveBeenCalledWith({ "TEST-KEY@123": "test_value" });
       });
 
-      it("should handle unicode characters", () => {
+      it("should handle unicode characters in key", () => {
         const setEnv = jest.fn();
         const initialEnv = { TEST_KEY: "test_value" };
         renderSidebar({ env: initialEnv, setEnv });
@@ -375,7 +375,7 @@ describe("Sidebar Environment Variables", () => {
         expect(setEnv).toHaveBeenCalledWith({ "TEST_🔑": "test_value" });
       });
 
-      it("should handle very long key names", () => {
+      it("should handle a very long key name", () => {
         const setEnv = jest.fn();
         const initialEnv = { TEST_KEY: "test_value" };
         renderSidebar({ env: initialEnv, setEnv });
@@ -391,7 +391,7 @@ describe("Sidebar Environment Variables", () => {
     });
   });
 
-  describe("Copy Configuration Features", () => {
+  describe("Copy Server Features", () => {
     beforeEach(() => {
       jest.clearAllMocks();
       jest.clearAllTimers();
@@ -769,7 +769,7 @@ describe("Sidebar Environment Variables", () => {
     });
   });
 
-  describe("Configuration Operations", () => {
+  describe("Configuration", () => {
     const openConfigSection = () => {
       const button = screen.getByTestId("config-button");
       fireEvent.click(button);
