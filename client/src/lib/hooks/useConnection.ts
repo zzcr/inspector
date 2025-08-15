@@ -332,7 +332,10 @@ export function useConnection({
         }
         scope = await discoverScopes(sseUrl, resourceMetadata);
       }
-      const serverAuthProvider = new InspectorOAuthClientProvider(sseUrl, scope);
+      const serverAuthProvider = new InspectorOAuthClientProvider(
+        sseUrl,
+        scope,
+      );
 
       const result = await auth(serverAuthProvider, {
         serverUrl: sseUrl,
