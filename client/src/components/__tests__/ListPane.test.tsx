@@ -159,8 +159,6 @@ describe("ListPane", () => {
         fireEvent.blur(searchInput);
       });
 
-      // The search input is hidden with CSS but still in the DOM
-      // We should check that the search button is visible again
       const searchButtonAfterCollapse = screen.getByRole("button", {
         name: "Search",
       });
