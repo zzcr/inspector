@@ -57,6 +57,8 @@ const ListPane = <T extends object>({
           <h3 className="font-semibold dark:text-white">{title}</h3>
           <div className="relative flex items-center">
             <button
+              name="search"
+              aria-label="Search"
               onClick={handleSearchClick}
               className={`p-2 hover:bg-gray-100 dark:hover:bg-secondary rounded-md transition-all duration-300 ease-in-out ${
                 isSearchExpanded
@@ -78,6 +80,7 @@ const ListPane = <T extends object>({
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
                 <Input
                   ref={searchInputRef}
+                  name="search"
                   type="text"
                   placeholder="Search..."
                   value={searchQuery}

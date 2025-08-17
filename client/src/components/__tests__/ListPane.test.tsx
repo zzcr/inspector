@@ -73,7 +73,7 @@ describe("ListPane", () => {
     it("should show search icon initially", () => {
       renderListPane();
 
-      const searchButton = screen.getByRole("button", { name: "" });
+      const searchButton = screen.getByRole("button", { name: "Search" });
       expect(searchButton).toBeInTheDocument();
       expect(searchButton.querySelector("svg")).toBeInTheDocument();
     });
@@ -81,7 +81,7 @@ describe("ListPane", () => {
     it("should expand search input when search icon is clicked", async () => {
       renderListPane();
 
-      const searchButton = screen.getByRole("button", { name: "" });
+      const searchButton = screen.getByRole("button", { name: "Search" });
       await act(async () => {
         fireEvent.click(searchButton);
       });
@@ -100,7 +100,7 @@ describe("ListPane", () => {
     it("should filter items based on search query", async () => {
       renderListPane();
 
-      const searchButton = screen.getByRole("button", { name: "" });
+      const searchButton = screen.getByRole("button", { name: "Search" });
       await act(async () => {
         fireEvent.click(searchButton);
       });
@@ -126,7 +126,7 @@ describe("ListPane", () => {
     it("should show 'No items found of matching \"NonExistent\"' when search has no results", async () => {
       renderListPane();
 
-      const searchButton = screen.getByRole("button", { name: "" });
+      const searchButton = screen.getByRole("button", { name: "Search" });
       await act(async () => {
         fireEvent.click(searchButton);
       });
@@ -146,7 +146,7 @@ describe("ListPane", () => {
     it("should collapse search when input is empty and loses focus", async () => {
       renderListPane();
 
-      const searchButton = screen.getByRole("button", { name: "" });
+      const searchButton = screen.getByRole("button", { name: "Search" });
       await act(async () => {
         fireEvent.click(searchButton);
       });
@@ -162,7 +162,7 @@ describe("ListPane", () => {
       // The search input is hidden with CSS but still in the DOM
       // We should check that the search button is visible again
       const searchButtonAfterCollapse = screen.getByRole("button", {
-        name: "",
+        name: "Search",
       });
       expect(searchButtonAfterCollapse).toBeInTheDocument();
       expect(searchButtonAfterCollapse).not.toHaveClass("opacity-0");
@@ -171,7 +171,7 @@ describe("ListPane", () => {
     it("should keep search expanded when input has content and loses focus", async () => {
       renderListPane();
 
-      const searchButton = screen.getByRole("button", { name: "" });
+      const searchButton = screen.getByRole("button", { name: "Search" });
       await act(async () => {
         fireEvent.click(searchButton);
       });
@@ -188,7 +188,7 @@ describe("ListPane", () => {
     it("should search through all item properties (description)", async () => {
       renderListPane();
 
-      const searchButton = screen.getByRole("button", { name: "" });
+      const searchButton = screen.getByRole("button", { name: "Search" });
       await act(async () => {
         fireEvent.click(searchButton);
       });
