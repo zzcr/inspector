@@ -25,6 +25,7 @@ const mockOAuthMetadata = {
   token_endpoint: "https://oauth.example.com/token",
   response_types_supported: ["code"],
   grant_types_supported: ["authorization_code"],
+  scopes_supported: ["read", "write"],
 };
 
 const mockOAuthClientInfo = {
@@ -36,26 +37,82 @@ const mockOAuthClientInfo = {
 // Mock MCP SDK functions - must be before imports
 jest.mock("@modelcontextprotocol/sdk/client/auth.js", () => ({
   auth: jest.fn(),
-  discoverOAuthMetadata: jest.fn(),
+  discoverAuthorizationServerMetadata: jest.fn(),
   registerClient: jest.fn(),
   startAuthorization: jest.fn(),
   exchangeAuthorization: jest.fn(),
+  discoverOAuthProtectedResourceMetadata: jest.fn(),
+  selectResourceURL: jest.fn(),
 }));
 
 // Import the functions to get their types
 import {
-  discoverOAuthMetadata,
+  discoverAuthorizationServerMetadata,
   registerClient,
   startAuthorization,
   exchangeAuthorization,
   auth,
+  discoverOAuthProtectedResourceMetadata,
 } from "@modelcontextprotocol/sdk/client/auth.js";
 import { OAuthMetadata } from "@modelcontextprotocol/sdk/shared/auth.js";
+import { EMPTY_DEBUGGER_STATE } from "@/lib/auth-types";
+
+// Mock local auth module
+jest.mock("@/lib/auth", () => ({
+  DebugInspectorOAuthClientProvider: jest.fn().mockImplementation(() => ({
+    tokens: jest.fn().mockImplementation(() => Promise.resolve(undefined)),
+    clear: jest.fn().mockImplementation(() => {
+      // Mock the real clear() behavior which removes items from sessionStorage
+      sessionStorage.removeItem("[https://example.com/mcp] mcp_tokens");
+      sessionStorage.removeItem("[https://example.com/mcp] mcp_client_info");
+      sessionStorage.removeItem(
+        "[https://example.com/mcp] mcp_server_metadata",
+      );
+    }),
+    redirectUrl: "http://localhost:3000/oauth/callback/debug",
+    clientMetadata: {
+      redirect_uris: ["http://localhost:3000/oauth/callback/debug"],
+      token_endpoint_auth_method: "none",
+      grant_types: ["authorization_code", "refresh_token"],
+      response_types: ["code"],
+      client_name: "MCP Inspector",
+    },
+    clientInformation: jest.fn().mockImplementation(async () => {
+      const serverUrl = "https://example.com/mcp";
+      const preregisteredKey = `[${serverUrl}] ${SESSION_KEYS.PREREGISTERED_CLIENT_INFORMATION}`;
+      const preregisteredData = sessionStorage.getItem(preregisteredKey);
+      if (preregisteredData) {
+        return JSON.parse(preregisteredData);
+      }
+      const dynamicKey = `[${serverUrl}] ${SESSION_KEYS.CLIENT_INFORMATION}`;
+      const dynamicData = sessionStorage.getItem(dynamicKey);
+      if (dynamicData) {
+        return JSON.parse(dynamicData);
+      }
+      return undefined;
+    }),
+    saveClientInformation: jest.fn().mockImplementation((clientInfo) => {
+      const serverUrl = "https://example.com/mcp";
+      const key = `[${serverUrl}] ${SESSION_KEYS.CLIENT_INFORMATION}`;
+      sessionStorage.setItem(key, JSON.stringify(clientInfo));
+    }),
+    saveTokens: jest.fn(),
+    redirectToAuthorization: jest.fn(),
+    saveCodeVerifier: jest.fn(),
+    codeVerifier: jest.fn(),
+    saveServerMetadata: jest.fn(),
+    getServerMetadata: jest.fn(),
+  })),
+  discoverScopes: jest.fn().mockResolvedValue("read write" as never),
+}));
+
+import { discoverScopes } from "@/lib/auth";
 
 // Type the mocked functions properly
-const mockDiscoverOAuthMetadata = discoverOAuthMetadata as jest.MockedFunction<
-  typeof discoverOAuthMetadata
->;
+const mockDiscoverAuthorizationServerMetadata =
+  discoverAuthorizationServerMetadata as jest.MockedFunction<
+    typeof discoverAuthorizationServerMetadata
+  >;
 const mockRegisterClient = registerClient as jest.MockedFunction<
   typeof registerClient
 >;
@@ -66,6 +123,13 @@ const mockExchangeAuthorization = exchangeAuthorization as jest.MockedFunction<
   typeof exchangeAuthorization
 >;
 const mockAuth = auth as jest.MockedFunction<typeof auth>;
+const mockDiscoverOAuthProtectedResourceMetadata =
+  discoverOAuthProtectedResourceMetadata as jest.MockedFunction<
+    typeof discoverOAuthProtectedResourceMetadata
+  >;
+const mockDiscoverScopes = discoverScopes as jest.MockedFunction<
+  typeof discoverScopes
+>;
 
 const sessionStorageMock = {
   getItem: jest.fn(),
@@ -77,29 +141,11 @@ Object.defineProperty(window, "sessionStorage", {
   value: sessionStorageMock,
 });
 
-Object.defineProperty(window, "location", {
-  value: {
-    origin: "http://localhost:3000",
-  },
-});
-
 describe("AuthDebugger", () => {
-  const defaultAuthState = {
-    isInitiatingAuth: false,
-    oauthTokens: null,
-    loading: false,
-    oauthStep: "metadata_discovery" as const,
-    oauthMetadata: null,
-    oauthClientInfo: null,
-    authorizationUrl: null,
-    authorizationCode: "",
-    latestError: null,
-    statusMessage: null,
-    validationError: null,
-  };
+  const defaultAuthState = EMPTY_DEBUGGER_STATE;
 
   const defaultProps = {
-    serverUrl: "https://example.com",
+    serverUrl: "https://example.com/mcp",
     onBack: jest.fn(),
     authState: defaultAuthState,
     updateAuthState: jest.fn(),
@@ -109,8 +155,22 @@ describe("AuthDebugger", () => {
     jest.clearAllMocks();
     sessionStorageMock.getItem.mockReturnValue(null);
 
-    mockDiscoverOAuthMetadata.mockResolvedValue(mockOAuthMetadata);
+    // Suppress console errors in tests to avoid JSDOM navigation noise
+    jest.spyOn(console, "error").mockImplementation(() => {});
+
+    // Set default mock behaviors with complete OAuth metadata
+    mockDiscoverAuthorizationServerMetadata.mockResolvedValue({
+      issuer: "https://oauth.example.com",
+      authorization_endpoint: "https://oauth.example.com/authorize",
+      token_endpoint: "https://oauth.example.com/token",
+      response_types_supported: ["code"],
+      grant_types_supported: ["authorization_code"],
+      scopes_supported: ["read", "write"],
+    });
     mockRegisterClient.mockResolvedValue(mockOAuthClientInfo);
+    mockDiscoverOAuthProtectedResourceMetadata.mockRejectedValue(
+      new Error("No protected resource metadata found"),
+    );
     mockStartAuthorization.mockImplementation(async (_sseUrl, options) => {
       const authUrl = new URL("https://oauth.example.com/authorize");
 
@@ -124,6 +184,10 @@ describe("AuthDebugger", () => {
       };
     });
     mockExchangeAuthorization.mockResolvedValue(mockOAuthTokens);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   const renderAuthDebugger = (props: Partial<AuthDebuggerProps> = {}) => {
@@ -203,26 +267,20 @@ describe("AuthDebugger", () => {
       });
 
       // Should first discover and save OAuth metadata
-      expect(mockDiscoverOAuthMetadata).toHaveBeenCalledWith(
-        "https://example.com",
+      expect(mockDiscoverAuthorizationServerMetadata).toHaveBeenCalledWith(
+        new URL("https://example.com/"),
       );
-
-      // Then should call auth with the server provider
-      expect(mockAuth).toHaveBeenCalled();
 
       // Check that updateAuthState was called with the right info message
       expect(updateAuthState).toHaveBeenCalledWith(
         expect.objectContaining({
-          statusMessage: {
-            type: "info",
-            message: "Starting OAuth authentication process...",
-          },
+          oauthStep: "authorization_code",
         }),
       );
     });
 
     it("should show error when quick OAuth flow fails to discover metadata", async () => {
-      mockDiscoverOAuthMetadata.mockRejectedValue(
+      mockDiscoverAuthorizationServerMetadata.mockRejectedValue(
         new Error("Metadata discovery failed"),
       );
 
@@ -322,6 +380,12 @@ describe("AuthDebugger", () => {
       });
 
       expect(updateAuthState).toHaveBeenCalledWith({
+        authServerUrl: null,
+        authorizationUrl: null,
+        isInitiatingAuth: false,
+        resourceMetadata: null,
+        resourceMetadataError: null,
+        resource: null,
         oauthTokens: null,
         oauthStep: "metadata_discovery",
         latestError: null,
@@ -362,8 +426,8 @@ describe("AuthDebugger", () => {
         fireEvent.click(screen.getByText("Continue"));
       });
 
-      expect(mockDiscoverOAuthMetadata).toHaveBeenCalledWith(
-        "https://example.com",
+      expect(mockDiscoverAuthorizationServerMetadata).toHaveBeenCalledWith(
+        new URL("https://example.com/"),
       );
     });
 
@@ -424,7 +488,24 @@ describe("AuthDebugger", () => {
       });
     });
 
-    it("should not include scope in authorization URL when scopes_supported is not present", async () => {
+    it("should include scope in authorization URL when scopes_supported is not present", async () => {
+      const updateAuthState =
+        await setupAuthorizationUrlTest(mockOAuthMetadata);
+
+      // Wait for the updateAuthState to be called
+      await waitFor(() => {
+        expect(updateAuthState).toHaveBeenCalledWith(
+          expect.objectContaining({
+            authorizationUrl: expect.stringContaining("scope="),
+          }),
+        );
+      });
+    });
+
+    it("should omit scope from authorization URL when discoverScopes returns undefined", async () => {
+      // Mock discoverScopes to return undefined (no scopes available)
+      mockDiscoverScopes.mockResolvedValueOnce(undefined);
+
       const updateAuthState =
         await setupAuthorizationUrlTest(mockOAuthMetadata);
 
@@ -436,6 +517,277 @@ describe("AuthDebugger", () => {
           }),
         );
       });
+    });
+  });
+
+  describe("Client Registration behavior", () => {
+    it("uses preregistered (static) client information without calling DCR", async () => {
+      const preregClientInfo = {
+        client_id: "static_client_id",
+        client_secret: "static_client_secret",
+        redirect_uris: ["http://localhost:3000/oauth/callback/debug"],
+      };
+
+      // Return preregistered client info for the server-specific key
+      sessionStorageMock.getItem.mockImplementation((key) => {
+        if (
+          key ===
+          `[${defaultProps.serverUrl}] ${SESSION_KEYS.PREREGISTERED_CLIENT_INFORMATION}`
+        ) {
+          return JSON.stringify(preregClientInfo);
+        }
+        return null;
+      });
+
+      const updateAuthState = jest.fn();
+
+      await act(async () => {
+        renderAuthDebugger({
+          updateAuthState,
+          authState: {
+            ...defaultAuthState,
+            isInitiatingAuth: false,
+            oauthStep: "client_registration",
+            oauthMetadata: mockOAuthMetadata as unknown as OAuthMetadata,
+          },
+        });
+      });
+
+      // Proceed from client_registration → authorization_redirect
+      await act(async () => {
+        fireEvent.click(screen.getByText("Continue"));
+      });
+
+      // Should NOT attempt dynamic client registration
+      expect(mockRegisterClient).not.toHaveBeenCalled();
+
+      // Should advance with the preregistered client info
+      expect(updateAuthState).toHaveBeenCalledWith(
+        expect.objectContaining({
+          oauthClientInfo: expect.objectContaining({
+            client_id: "static_client_id",
+          }),
+          oauthStep: "authorization_redirect",
+        }),
+      );
+    });
+
+    it("falls back to DCR when no static client information is available", async () => {
+      // No preregistered or dynamic client info present in session storage
+      sessionStorageMock.getItem.mockImplementation(() => null);
+
+      // DCR returns a new client
+      mockRegisterClient.mockResolvedValueOnce(mockOAuthClientInfo);
+
+      const updateAuthState = jest.fn();
+
+      await act(async () => {
+        renderAuthDebugger({
+          updateAuthState,
+          authState: {
+            ...defaultAuthState,
+            isInitiatingAuth: false,
+            oauthStep: "client_registration",
+            oauthMetadata: mockOAuthMetadata as unknown as OAuthMetadata,
+          },
+        });
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByText("Continue"));
+      });
+
+      expect(mockRegisterClient).toHaveBeenCalledTimes(1);
+
+      // Should save and advance with the DCR client info
+      expect(updateAuthState).toHaveBeenCalledWith(
+        expect.objectContaining({
+          oauthClientInfo: expect.objectContaining({
+            client_id: "test_client_id",
+          }),
+          oauthStep: "authorization_redirect",
+        }),
+      );
+
+      // Verify the dynamically registered client info was persisted
+      expect(sessionStorage.setItem).toHaveBeenCalledWith(
+        `[${defaultProps.serverUrl}] ${SESSION_KEYS.CLIENT_INFORMATION}`,
+        expect.any(String),
+      );
+    });
+  });
+
+  describe("OAuth State Persistence", () => {
+    it("should store auth state to sessionStorage before redirect in Quick OAuth Flow", async () => {
+      const updateAuthState = jest.fn();
+
+      // Setup mocks for OAuth flow
+      mockStartAuthorization.mockResolvedValue({
+        authorizationUrl: new URL(
+          "https://oauth.example.com/authorize?client_id=test_client_id&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Foauth%2Fcallback%2Fdebug",
+        ),
+        codeVerifier: "test_verifier",
+      });
+
+      await act(async () => {
+        renderAuthDebugger({
+          updateAuthState,
+          authState: { ...defaultAuthState },
+        });
+      });
+
+      // Click Quick OAuth Flow
+      await act(async () => {
+        fireEvent.click(screen.getByText("Quick OAuth Flow"));
+      });
+
+      // Wait for the flow to reach the authorization step
+      await waitFor(() => {
+        expect(sessionStorage.setItem).toHaveBeenCalledWith(
+          SESSION_KEYS.AUTH_DEBUGGER_STATE,
+          expect.stringContaining('"oauthStep":"authorization_code"'),
+        );
+      });
+
+      // Verify the stored state includes all the accumulated data
+      const storedStateCall = (
+        sessionStorage.setItem as jest.Mock
+      ).mock.calls.find((call) => call[0] === SESSION_KEYS.AUTH_DEBUGGER_STATE);
+
+      expect(storedStateCall).toBeDefined();
+      const storedState = JSON.parse(storedStateCall![1] as string);
+
+      expect(storedState).toMatchObject({
+        oauthStep: "authorization_code",
+        authorizationUrl: expect.stringMatching(
+          /^https:\/\/oauth\.example\.com\/authorize/,
+        ),
+        oauthMetadata: expect.objectContaining({
+          token_endpoint: "https://oauth.example.com/token",
+        }),
+        oauthClientInfo: expect.objectContaining({
+          client_id: "test_client_id",
+        }),
+      });
+    });
+  });
+
+  describe("OAuth Protected Resource Metadata", () => {
+    it("should successfully fetch and display protected resource metadata", async () => {
+      const updateAuthState = jest.fn();
+      const mockResourceMetadata = {
+        resource: "https://example.com/mcp",
+        authorization_servers: ["https://custom-auth.example.com"],
+        bearer_methods_supported: ["header", "body"],
+        resource_documentation: "https://example.com/mcp/docs",
+        resource_policy_uri: "https://example.com/mcp/policy",
+      };
+
+      // Mock successful metadata discovery
+      mockDiscoverOAuthProtectedResourceMetadata.mockResolvedValue(
+        mockResourceMetadata,
+      );
+      mockDiscoverAuthorizationServerMetadata.mockResolvedValue(
+        mockOAuthMetadata,
+      );
+
+      await act(async () => {
+        renderAuthDebugger({
+          updateAuthState,
+          authState: { ...defaultAuthState },
+        });
+      });
+
+      // Click Guided OAuth Flow to start the process
+      await act(async () => {
+        fireEvent.click(screen.getByText("Guided OAuth Flow"));
+      });
+
+      // Verify that the flow started with metadata discovery
+      expect(updateAuthState).toHaveBeenCalledWith({
+        oauthStep: "metadata_discovery",
+        authorizationUrl: null,
+        statusMessage: null,
+        latestError: null,
+      });
+
+      // Click Continue to trigger metadata discovery
+      const continueButton = await screen.findByText("Continue");
+      await act(async () => {
+        fireEvent.click(continueButton);
+      });
+
+      // Wait for the metadata to be fetched
+      await waitFor(() => {
+        expect(mockDiscoverOAuthProtectedResourceMetadata).toHaveBeenCalledWith(
+          "https://example.com/mcp",
+        );
+      });
+
+      // Verify the state was updated with the resource metadata
+      await waitFor(() => {
+        expect(updateAuthState).toHaveBeenCalledWith(
+          expect.objectContaining({
+            resourceMetadata: mockResourceMetadata,
+            authServerUrl: new URL("https://custom-auth.example.com"),
+            oauthStep: "client_registration",
+          }),
+        );
+      });
+    });
+
+    it("should handle protected resource metadata fetch failure gracefully", async () => {
+      const updateAuthState = jest.fn();
+      const mockError = new Error("Failed to fetch resource metadata");
+
+      // Mock failed metadata discovery
+      mockDiscoverOAuthProtectedResourceMetadata.mockRejectedValue(mockError);
+      // But OAuth metadata should still work with the original URL
+      mockDiscoverAuthorizationServerMetadata.mockResolvedValue(
+        mockOAuthMetadata,
+      );
+
+      await act(async () => {
+        renderAuthDebugger({
+          updateAuthState,
+          authState: { ...defaultAuthState },
+        });
+      });
+
+      // Click Guided OAuth Flow
+      await act(async () => {
+        fireEvent.click(screen.getByText("Guided OAuth Flow"));
+      });
+
+      // Click Continue to trigger metadata discovery
+      const continueButton = await screen.findByText("Continue");
+      await act(async () => {
+        fireEvent.click(continueButton);
+      });
+
+      // Wait for the metadata fetch to fail
+      await waitFor(() => {
+        expect(mockDiscoverOAuthProtectedResourceMetadata).toHaveBeenCalledWith(
+          "https://example.com/mcp",
+        );
+      });
+
+      // Verify the flow continues despite the error
+      await waitFor(() => {
+        expect(updateAuthState).toHaveBeenCalledWith(
+          expect.objectContaining({
+            resourceMetadataError: mockError,
+            // Should use the original server URL as fallback
+            authServerUrl: new URL("https://example.com/"),
+            oauthStep: "client_registration",
+          }),
+        );
+      });
+
+      // Verify that regular OAuth metadata discovery was still called
+      expect(mockDiscoverAuthorizationServerMetadata).toHaveBeenCalledWith(
+        new URL("https://example.com/"),
+      );
     });
   });
 });

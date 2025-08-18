@@ -12,7 +12,7 @@ const colors = {
 
 import fs from "fs";
 import path from "path";
-import { execSync, spawn } from "child_process";
+import { spawn } from "child_process";
 import os from "os";
 import { fileURLToPath } from "url";
 
@@ -44,7 +44,14 @@ console.log(`${colors.BLUE}- Resource-related options (--uri)${colors.NC}`);
 console.log(
   `${colors.BLUE}- Prompt-related options (--prompt-name, --prompt-args)${colors.NC}`,
 );
-console.log(`${colors.BLUE}- Logging options (--log-level)${colors.NC}\n`);
+console.log(`${colors.BLUE}- Logging options (--log-level)${colors.NC}`);
+console.log(
+  `${colors.BLUE}- Transport types (--transport http/sse/stdio)${colors.NC}`,
+);
+console.log(
+  `${colors.BLUE}- Transport inference from URL suffixes (/mcp, /sse)${colors.NC}`,
+);
+console.log(`\n`);
 
 // Get directory paths
 const SCRIPTS_DIR = __dirname;
@@ -62,9 +69,11 @@ if (!fs.existsSync(OUTPUT_DIR)) {
 }
 
 // Create a temporary directory for test files
-const TEMP_DIR = fs.mkdirSync(path.join(os.tmpdir(), "mcp-inspector-tests"), {
-  recursive: true,
-});
+const TEMP_DIR = path.join(os.tmpdir(), "mcp-inspector-tests");
+fs.mkdirSync(TEMP_DIR, { recursive: true });
+
+// Track servers for cleanup
+let runningServers = [];
 
 process.on("exit", () => {
   try {
@@ -74,6 +83,21 @@ process.on("exit", () => {
       `${colors.RED}Failed to remove temp directory: ${err.message}${colors.NC}`,
     );
   }
+
+  runningServers.forEach((server) => {
+    try {
+      process.kill(-server.pid);
+    } catch (e) {}
+  });
+});
+
+process.on("SIGINT", () => {
+  runningServers.forEach((server) => {
+    try {
+      process.kill(-server.pid);
+    } catch (e) {}
+  });
+  process.exit(1);
 });
 
 // Use the existing sample config file
@@ -95,6 +119,85 @@ try {
 // Create an invalid config file for testing
 const invalidConfigPath = path.join(TEMP_DIR, "invalid-config.json");
 fs.writeFileSync(invalidConfigPath, '{\n  "mcpServers": {\n    "invalid": {');
+
+// Create config files with different transport types for testing
+const sseConfigPath = path.join(TEMP_DIR, "sse-config.json");
+fs.writeFileSync(
+  sseConfigPath,
+  JSON.stringify(
+    {
+      mcpServers: {
+        "test-sse": {
+          type: "sse",
+          url: "http://localhost:3000/sse",
+          note: "Test SSE server",
+        },
+      },
+    },
+    null,
+    2,
+  ),
+);
+
+const httpConfigPath = path.join(TEMP_DIR, "http-config.json");
+fs.writeFileSync(
+  httpConfigPath,
+  JSON.stringify(
+    {
+      mcpServers: {
+        "test-http": {
+          type: "streamable-http",
+          url: "http://localhost:3000/mcp",
+          note: "Test HTTP server",
+        },
+      },
+    },
+    null,
+    2,
+  ),
+);
+
+const stdioConfigPath = path.join(TEMP_DIR, "stdio-config.json");
+fs.writeFileSync(
+  stdioConfigPath,
+  JSON.stringify(
+    {
+      mcpServers: {
+        "test-stdio": {
+          type: "stdio",
+          command: "npx",
+          args: ["@modelcontextprotocol/server-everything"],
+          env: {
+            TEST_ENV: "test-value",
+          },
+        },
+      },
+    },
+    null,
+    2,
+  ),
+);
+
+// Config without type field (backward compatibility)
+const legacyConfigPath = path.join(TEMP_DIR, "legacy-config.json");
+fs.writeFileSync(
+  legacyConfigPath,
+  JSON.stringify(
+    {
+      mcpServers: {
+        "test-legacy": {
+          command: "npx",
+          args: ["@modelcontextprotocol/server-everything"],
+          env: {
+            LEGACY_ENV: "legacy-value",
+          },
+        },
+      },
+    },
+    null,
+    2,
+  ),
+);
 
 // Function to run a basic test
 async function runBasicTest(testName, ...args) {
@@ -121,6 +224,11 @@ async function runBasicTest(testName, ...args) {
         stdio: ["ignore", "pipe", "pipe"],
       });
 
+      const timeout = setTimeout(() => {
+        console.log(`${colors.YELLOW}Test timed out: ${testName}${colors.NC}`);
+        child.kill();
+      }, 10000);
+
       // Pipe stdout and stderr to the output file
       child.stdout.pipe(outputStream);
       child.stderr.pipe(outputStream);
@@ -135,6 +243,7 @@ async function runBasicTest(testName, ...args) {
       });
 
       child.on("close", (code) => {
+        clearTimeout(timeout);
         outputStream.end();
 
         if (code === 0) {
@@ -201,6 +310,13 @@ async function runErrorTest(testName, ...args) {
         stdio: ["ignore", "pipe", "pipe"],
       });
 
+      const timeout = setTimeout(() => {
+        console.log(
+          `${colors.YELLOW}Error test timed out: ${testName}${colors.NC}`,
+        );
+        child.kill();
+      }, 10000);
+
       // Pipe stdout and stderr to the output file
       child.stdout.pipe(outputStream);
       child.stderr.pipe(outputStream);
@@ -215,6 +331,7 @@ async function runErrorTest(testName, ...args) {
       });
 
       child.on("close", (code) => {
+        clearTimeout(timeout);
         outputStream.end();
 
         // For error tests, we expect a non-zero exit code
@@ -610,6 +727,253 @@ async function runTests() {
     "--log-level",
     "debug",
   );
+
+  console.log(
+    `\n${colors.YELLOW}=== Running Config Transport Type Tests ===${colors.NC}`,
+  );
+
+  // Test 25: Config with stdio transport type
+  await runBasicTest(
+    "config_stdio_type",
+    "--config",
+    stdioConfigPath,
+    "--server",
+    "test-stdio",
+    "--cli",
+    "--method",
+    "tools/list",
+  );
+
+  // Test 26: Config with SSE transport type (CLI mode) - expects connection error
+  await runErrorTest(
+    "config_sse_type_cli",
+    "--config",
+    sseConfigPath,
+    "--server",
+    "test-sse",
+    "--cli",
+    "--method",
+    "tools/list",
+  );
+
+  // Test 27: Config with streamable-http transport type (CLI mode) - expects connection error
+  await runErrorTest(
+    "config_http_type_cli",
+    "--config",
+    httpConfigPath,
+    "--server",
+    "test-http",
+    "--cli",
+    "--method",
+    "tools/list",
+  );
+
+  // Test 28: Legacy config without type field (backward compatibility)
+  await runBasicTest(
+    "config_legacy_no_type",
+    "--config",
+    legacyConfigPath,
+    "--server",
+    "test-legacy",
+    "--cli",
+    "--method",
+    "tools/list",
+  );
+
+  console.log(
+    `\n${colors.YELLOW}=== Running Default Server Tests ===${colors.NC}`,
+  );
+
+  // Create config with single server for auto-selection
+  const singleServerConfigPath = path.join(
+    TEMP_DIR,
+    "single-server-config.json",
+  );
+  fs.writeFileSync(
+    singleServerConfigPath,
+    JSON.stringify(
+      {
+        mcpServers: {
+          "only-server": {
+            command: "npx",
+            args: ["@modelcontextprotocol/server-everything"],
+          },
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  // Create config with default-server
+  const defaultServerConfigPath = path.join(
+    TEMP_DIR,
+    "default-server-config.json",
+  );
+  fs.writeFileSync(
+    defaultServerConfigPath,
+    JSON.stringify(
+      {
+        mcpServers: {
+          "default-server": {
+            command: "npx",
+            args: ["@modelcontextprotocol/server-everything"],
+          },
+          "other-server": {
+            command: "node",
+            args: ["other.js"],
+          },
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  // Create config with multiple servers (no default)
+  const multiServerConfigPath = path.join(TEMP_DIR, "multi-server-config.json");
+  fs.writeFileSync(
+    multiServerConfigPath,
+    JSON.stringify(
+      {
+        mcpServers: {
+          server1: {
+            command: "npx",
+            args: ["@modelcontextprotocol/server-everything"],
+          },
+          server2: {
+            command: "node",
+            args: ["other.js"],
+          },
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  // Test 29: Config with single server auto-selection
+  await runBasicTest(
+    "single_server_auto_select",
+    "--config",
+    singleServerConfigPath,
+    "--cli",
+    "--method",
+    "tools/list",
+  );
+
+  // Test 30: Config with default-server should now require explicit selection (multiple servers)
+  await runErrorTest(
+    "default_server_requires_explicit_selection",
+    "--config",
+    defaultServerConfigPath,
+    "--cli",
+    "--method",
+    "tools/list",
+  );
+
+  // Test 31: Config with multiple servers and no default (should fail)
+  await runErrorTest(
+    "multi_server_no_default",
+    "--config",
+    multiServerConfigPath,
+    "--cli",
+    "--method",
+    "tools/list",
+  );
+
+  console.log(
+    `\n${colors.YELLOW}=== Running HTTP Transport Tests ===${colors.NC}`,
+  );
+
+  console.log(
+    `${colors.BLUE}Starting server-everything in streamableHttp mode.${colors.NC}`,
+  );
+  const httpServer = spawn(
+    "npx",
+    ["@modelcontextprotocol/server-everything", "streamableHttp"],
+    {
+      detached: true,
+      stdio: "ignore",
+    },
+  );
+  runningServers.push(httpServer);
+
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+
+  // Test 32: HTTP transport inferred from URL ending with /mcp
+  await runBasicTest(
+    "http_transport_inferred",
+    "http://127.0.0.1:3001/mcp",
+    "--cli",
+    "--method",
+    "tools/list",
+  );
+
+  // Test 33: HTTP transport with explicit --transport http flag
+  await runBasicTest(
+    "http_transport_with_explicit_flag",
+    "http://127.0.0.1:3001/mcp",
+    "--transport",
+    "http",
+    "--cli",
+    "--method",
+    "tools/list",
+  );
+
+  // Test 34: HTTP transport with suffix and --transport http flag
+  await runBasicTest(
+    "http_transport_with_explicit_flag_and_suffix",
+    "http://127.0.0.1:3001/mcp",
+    "--transport",
+    "http",
+    "--cli",
+    "--method",
+    "tools/list",
+  );
+
+  // Test 35: SSE transport given to HTTP server (should fail)
+  await runErrorTest(
+    "sse_transport_given_to_http_server",
+    "http://127.0.0.1:3001",
+    "--transport",
+    "sse",
+    "--cli",
+    "--method",
+    "tools/list",
+  );
+
+  // Test 36: HTTP transport without URL (should fail)
+  await runErrorTest(
+    "http_transport_without_url",
+    "--transport",
+    "http",
+    "--cli",
+    "--method",
+    "tools/list",
+  );
+
+  // Test 37: SSE transport without URL (should fail)
+  await runErrorTest(
+    "sse_transport_without_url",
+    "--transport",
+    "sse",
+    "--cli",
+    "--method",
+    "tools/list",
+  );
+
+  // Kill HTTP server
+  try {
+    process.kill(-httpServer.pid);
+    console.log(
+      `${colors.BLUE}HTTP server killed, waiting for port to be released...${colors.NC}`,
+    );
+  } catch (e) {
+    console.log(
+      `${colors.RED}Error killing HTTP server: ${e.message}${colors.NC}`,
+    );
+  }
 
   // Print test summary
   console.log(`\n${colors.YELLOW}=== Test Summary ===${colors.NC}`);

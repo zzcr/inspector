@@ -6,11 +6,103 @@ import {
   OAuthTokensSchema,
   OAuthClientMetadata,
   OAuthMetadata,
+  OAuthProtectedResourceMetadata,
 } from "@modelcontextprotocol/sdk/shared/auth.js";
+import { discoverAuthorizationServerMetadata } from "@modelcontextprotocol/sdk/client/auth.js";
 import { SESSION_KEYS, getServerSpecificKey } from "./constants";
+import { generateOAuthState } from "@/utils/oauthUtils";
+
+/**
+ * Discovers OAuth scopes from server metadata, with preference for resource metadata scopes
+ * @param serverUrl - The MCP server URL
+ * @param resourceMetadata - Optional resource metadata containing preferred scopes
+ * @returns Promise resolving to space-separated scope string or undefined
+ */
+export const discoverScopes = async (
+  serverUrl: string,
+  resourceMetadata?: OAuthProtectedResourceMetadata,
+): Promise<string | undefined> => {
+  try {
+    const metadata = await discoverAuthorizationServerMetadata(
+      new URL("/", serverUrl),
+    );
+
+    // Prefer resource metadata scopes, but fall back to OAuth metadata if empty
+    const resourceScopes = resourceMetadata?.scopes_supported;
+    const oauthScopes = metadata?.scopes_supported;
+
+    const scopesSupported =
+      resourceScopes && resourceScopes.length > 0
+        ? resourceScopes
+        : oauthScopes;
+
+    return scopesSupported && scopesSupported.length > 0
+      ? scopesSupported.join(" ")
+      : undefined;
+  } catch (error) {
+    console.debug("OAuth scope discovery failed:", error);
+    return undefined;
+  }
+};
+
+export const getClientInformationFromSessionStorage = async ({
+  serverUrl,
+  isPreregistered,
+}: {
+  serverUrl: string;
+  isPreregistered?: boolean;
+}) => {
+  const key = getServerSpecificKey(
+    isPreregistered
+      ? SESSION_KEYS.PREREGISTERED_CLIENT_INFORMATION
+      : SESSION_KEYS.CLIENT_INFORMATION,
+    serverUrl,
+  );
+
+  const value = sessionStorage.getItem(key);
+  if (!value) {
+    return undefined;
+  }
+
+  return await OAuthClientInformationSchema.parseAsync(JSON.parse(value));
+};
+
+export const saveClientInformationToSessionStorage = ({
+  serverUrl,
+  clientInformation,
+  isPreregistered,
+}: {
+  serverUrl: string;
+  clientInformation: OAuthClientInformation;
+  isPreregistered?: boolean;
+}) => {
+  const key = getServerSpecificKey(
+    isPreregistered
+      ? SESSION_KEYS.PREREGISTERED_CLIENT_INFORMATION
+      : SESSION_KEYS.CLIENT_INFORMATION,
+    serverUrl,
+  );
+  sessionStorage.setItem(key, JSON.stringify(clientInformation));
+};
+
+export const clearClientInformationFromSessionStorage = ({
+  serverUrl,
+  isPreregistered,
+}: {
+  serverUrl: string;
+  isPreregistered?: boolean;
+}) => {
+  const key = getServerSpecificKey(
+    isPreregistered
+      ? SESSION_KEYS.PREREGISTERED_CLIENT_INFORMATION
+      : SESSION_KEYS.CLIENT_INFORMATION,
+    serverUrl,
+  );
+  sessionStorage.removeItem(key);
+};
 
 export class InspectorOAuthClientProvider implements OAuthClientProvider {
-  constructor(public serverUrl: string) {
+  constructor(protected serverUrl: string) {
     // Save the server URL to session storage
     sessionStorage.setItem(SESSION_KEYS.SERVER_URL, serverUrl);
   }
@@ -30,25 +122,42 @@ export class InspectorOAuthClientProvider implements OAuthClientProvider {
     };
   }
 
-  async clientInformation() {
-    const key = getServerSpecificKey(
-      SESSION_KEYS.CLIENT_INFORMATION,
-      this.serverUrl,
-    );
-    const value = sessionStorage.getItem(key);
-    if (!value) {
-      return undefined;
-    }
+  state(): string | Promise<string> {
+    return generateOAuthState();
+  }
 
-    return await OAuthClientInformationSchema.parseAsync(JSON.parse(value));
+  async clientInformation() {
+    // Try to get the preregistered client information from session storage first
+    const preregisteredClientInformation =
+      await getClientInformationFromSessionStorage({
+        serverUrl: this.serverUrl,
+        isPreregistered: true,
+      });
+
+    // If no preregistered client information is found, get the dynamically registered client information
+    return (
+      preregisteredClientInformation ??
+      (await getClientInformationFromSessionStorage({
+        serverUrl: this.serverUrl,
+        isPreregistered: false,
+      }))
+    );
   }
 
   saveClientInformation(clientInformation: OAuthClientInformation) {
-    const key = getServerSpecificKey(
-      SESSION_KEYS.CLIENT_INFORMATION,
-      this.serverUrl,
-    );
-    sessionStorage.setItem(key, JSON.stringify(clientInformation));
+    // Remove client_secret before storing (not needed after initial OAuth flow)
+    const safeInfo = Object.fromEntries(
+      Object.entries(clientInformation).filter(
+        ([key]) => key !== "client_secret",
+      ),
+    ) as OAuthClientInformation;
+
+    // Save the dynamically registered client information to session storage
+    saveClientInformationToSessionStorage({
+      serverUrl: this.serverUrl,
+      clientInformation: safeInfo,
+      isPreregistered: false,
+    });
   }
 
   async tokens() {
@@ -67,6 +176,12 @@ export class InspectorOAuthClientProvider implements OAuthClientProvider {
   }
 
   redirectToAuthorization(authorizationUrl: URL) {
+    if (
+      authorizationUrl.protocol !== "http:" &&
+      authorizationUrl.protocol !== "https:"
+    ) {
+      throw new Error("Authorization URL must be HTTP or HTTPS");
+    }
     window.location.href = authorizationUrl.href;
   }
 
@@ -92,9 +207,10 @@ export class InspectorOAuthClientProvider implements OAuthClientProvider {
   }
 
   clear() {
-    sessionStorage.removeItem(
-      getServerSpecificKey(SESSION_KEYS.CLIENT_INFORMATION, this.serverUrl),
-    );
+    clearClientInformationFromSessionStorage({
+      serverUrl: this.serverUrl,
+      isPreregistered: false,
+    });
     sessionStorage.removeItem(
       getServerSpecificKey(SESSION_KEYS.TOKENS, this.serverUrl),
     );
