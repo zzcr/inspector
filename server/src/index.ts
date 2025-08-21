@@ -401,24 +401,65 @@ app.get(
 
       (serverTransport as StdioClientTransport).stderr!.on("data", (chunk) => {
         if (chunk.toString().includes("MODULE_NOT_FOUND")) {
+          // Server command not found, remove transports
+          const message = "Command not found, transports removed";
           webAppTransport.send({
             jsonrpc: "2.0",
-            method: "notifications/stderr",
+            method: "notifications/message",
             params: {
-              content: "Command not found, transports removed",
+              level: "alert",
+              data: {
+                error: message,
+              },
             },
           });
           webAppTransport.close();
           serverTransport.close();
           webAppTransports.delete(webAppTransport.sessionId);
           serverTransports.delete(webAppTransport.sessionId);
-          console.error("Command not found, transports removed");
+          console.error(message);
         } else {
+          // Inspect message and attempt to assign a RFC 5424 Syslog Protocol level
+          let level;
+          let message = chunk.toString();
+          let ucMsg = chunk.toString().toUpperCase();
+          if (ucMsg.includes("DEBUG")) {
+            level = "debug";
+          } else if (ucMsg.includes("INFO")) {
+            level = "info";
+          } else if (ucMsg.includes("NOTICE")) {
+            level = "notice";
+          } else if (ucMsg.includes("WARN")) {
+            level = "warning";
+          } else if (ucMsg.includes("ERROR")) {
+            level = "error";
+          } else if (ucMsg.includes("CRITICAL")) {
+            level = "critical";
+          } else if (ucMsg.includes("ALERT")) {
+            level = "alert";
+          } else if (ucMsg.includes("EMERGENCY")) {
+            level = "emergency";
+          } else if (ucMsg.includes("SIGINT")) {
+            level = "alert";
+            message = "SIGINT received. Server shutdown.";
+          } else if (ucMsg.includes("SIGHUP")) {
+            level = "alert";
+            message = "SIGHUP received. Server shutdown.";
+          } else if (ucMsg.includes("SIGTERM")) {
+            level = "alert";
+            message = "SIGTERM received. Server shutdown.";
+          } else {
+            level = "info";
+          }
           webAppTransport.send({
             jsonrpc: "2.0",
-            method: "notifications/stderr",
+            method: "notifications/message",
             params: {
-              content: chunk.toString(),
+              level,
+              logger: "stdio",
+              data: {
+                error: message,
+              },
             },
           });
         }
