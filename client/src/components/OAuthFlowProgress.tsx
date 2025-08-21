@@ -246,11 +246,18 @@ export const OAuthFlowProgress = ({
                   onClick={() => {
                     try {
                       validateRedirectUrl(authState.authorizationUrl!);
-                      window.open(authState.authorizationUrl!, "_blank");
+                      window.open(
+                        authState.authorizationUrl!,
+                        "_blank",
+                        "noopener noreferrer",
+                      );
                     } catch (error) {
                       toast({
                         title: "Invalid URL",
-                        description: error instanceof Error ? error.message : "The authorization URL is not valid",
+                        description:
+                          error instanceof Error
+                            ? error.message
+                            : "The authorization URL is not valid",
                         variant: "destructive",
                       });
                     }
@@ -373,7 +380,10 @@ export const OAuthFlowProgress = ({
                 } catch (error) {
                   toast({
                     title: "Invalid URL",
-                    description: error instanceof Error ? error.message : "The authorization URL is not valid",
+                    description:
+                      error instanceof Error
+                        ? error.message
+                        : "The authorization URL is not valid",
                     variant: "destructive",
                   });
                 }
