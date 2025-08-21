@@ -407,7 +407,7 @@ app.get(
             jsonrpc: "2.0",
             method: "notifications/message",
             params: {
-              level: "alert",
+              level: "emergency",
               logger: "proxy",
               data: {
                 message,
@@ -441,14 +441,14 @@ app.get(
           } else if (ucMsg.includes("EMERGENCY")) {
             level = "emergency";
           } else if (ucMsg.includes("SIGINT")) {
-            level = "alert";
             message = "SIGINT received. Server shutdown.";
+            level = "emergency";
           } else if (ucMsg.includes("SIGHUP")) {
-            level = "alert";
             message = "SIGHUP received. Server shutdown.";
+            level = "emergency";
           } else if (ucMsg.includes("SIGTERM")) {
-            level = "alert";
             message = "SIGTERM received. Server shutdown.";
+            level = "emergency";
           } else {
             level = "info";
           }
