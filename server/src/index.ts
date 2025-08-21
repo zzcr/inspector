@@ -458,7 +458,7 @@ app.get(
               level,
               logger: "stdio",
               data: {
-                error: message,
+                message,
               },
             },
           });
