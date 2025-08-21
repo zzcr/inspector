@@ -409,7 +409,7 @@ app.get(
             params: {
               level: "alert",
               data: {
-                error: message,
+                message,
               },
             },
           });
