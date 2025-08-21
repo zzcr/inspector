@@ -408,6 +408,7 @@ app.get(
             method: "notifications/message",
             params: {
               level: "alert",
+              logger: "proxy",
               data: {
                 message,
               },
