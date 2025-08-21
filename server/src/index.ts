@@ -421,7 +421,7 @@ app.get(
         } else {
           // Inspect message and attempt to assign a RFC 5424 Syslog Protocol level
           let level;
-          let message = chunk.toString();
+          let message = chunk.toString().trim();
           let ucMsg = chunk.toString().toUpperCase();
           if (ucMsg.includes("DEBUG")) {
             level = "debug";
