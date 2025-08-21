@@ -11,58 +11,64 @@ describe("validateRedirectUrl", () => {
     });
 
     it("should allow URLs with ports", () => {
-      expect(() => validateRedirectUrl("https://example.com:8080")).not.toThrow();
+      expect(() =>
+        validateRedirectUrl("https://example.com:8080"),
+      ).not.toThrow();
     });
 
     it("should allow URLs with paths", () => {
-      expect(() => validateRedirectUrl("https://example.com/path/to/auth")).not.toThrow();
+      expect(() =>
+        validateRedirectUrl("https://example.com/path/to/auth"),
+      ).not.toThrow();
     });
 
     it("should allow URLs with query parameters", () => {
-      expect(() => validateRedirectUrl("https://example.com?param=value")).not.toThrow();
+      expect(() =>
+        validateRedirectUrl("https://example.com?param=value"),
+      ).not.toThrow();
     });
   });
 
   describe("invalid URLs - XSS vectors", () => {
     it("should block javascript: protocol", () => {
       expect(() => validateRedirectUrl("javascript:alert('XSS')")).toThrow(
-        "Authorization URL must be HTTP or HTTPS"
+        "Authorization URL must be HTTP or HTTPS",
       );
     });
 
     it("should block javascript: with encoded characters", () => {
-      expect(() => validateRedirectUrl("javascript:alert%28%27XSS%27%29")).toThrow(
-        "Authorization URL must be HTTP or HTTPS"
-      );
+      expect(() =>
+        validateRedirectUrl("javascript:alert%28%27XSS%27%29"),
+      ).toThrow("Authorization URL must be HTTP or HTTPS");
     });
 
     it("should block data: protocol", () => {
-      expect(() => validateRedirectUrl("data:text/html,<script>alert('XSS')</script>")).toThrow(
-        "Authorization URL must be HTTP or HTTPS"
-      );
+      expect(() =>
+        validateRedirectUrl("data:text/html,<script>alert('XSS')</script>"),
+      ).toThrow("Authorization URL must be HTTP or HTTPS");
     });
 
     it("should block vbscript: protocol", () => {
       expect(() => validateRedirectUrl("vbscript:msgbox")).toThrow(
-        "Authorization URL must be HTTP or HTTPS"
+        "Authorization URL must be HTTP or HTTPS",
       );
     });
 
     it("should block file: protocol", () => {
       expect(() => validateRedirectUrl("file:///etc/passwd")).toThrow(
-        "Authorization URL must be HTTP or HTTPS"
+        "Authorization URL must be HTTP or HTTPS",
       );
     });
 
     it("should block about: protocol", () => {
       expect(() => validateRedirectUrl("about:blank")).toThrow(
-        "Authorization URL must be HTTP or HTTPS"
+        "Authorization URL must be HTTP or HTTPS",
       );
     });
 
     it("should block custom protocols", () => {
       expect(() => validateRedirectUrl("custom://example")).toThrow(
-        "Authorization URL must be HTTP or HTTPS"
+        "Authorization URL must be HTTP or HTTPS",
       );
     });
   });
@@ -70,14 +76,12 @@ describe("validateRedirectUrl", () => {
   describe("edge cases", () => {
     it("should handle malformed URLs", () => {
       expect(() => validateRedirectUrl("not a url")).toThrow(
-        "Invalid URL: not a url"
+        "Invalid URL: not a url",
       );
     });
 
     it("should handle empty string", () => {
-      expect(() => validateRedirectUrl("")).toThrow(
-        "Invalid URL: "
-      );
+      expect(() => validateRedirectUrl("")).toThrow("Invalid URL: ");
     });
 
     it("should handle URLs with unicode characters", () => {
@@ -91,12 +95,14 @@ describe("validateRedirectUrl", () => {
 
     it("should handle protocol-relative URLs as invalid", () => {
       expect(() => validateRedirectUrl("//example.com")).toThrow(
-        "Invalid URL: //example.com"
+        "Invalid URL: //example.com",
       );
     });
 
     it("should handle URLs with authentication", () => {
-      expect(() => validateRedirectUrl("https://user:pass@example.com")).not.toThrow();
+      expect(() =>
+        validateRedirectUrl("https://user:pass@example.com"),
+      ).not.toThrow();
     });
   });
 
@@ -107,7 +113,9 @@ describe("validateRedirectUrl", () => {
     });
 
     it("should handle null bytes", () => {
-      expect(() => validateRedirectUrl("java\x00script:alert('XSS')")).toThrow();
+      expect(() =>
+        validateRedirectUrl("java\x00script:alert('XSS')"),
+      ).toThrow();
     });
 
     it("should handle tab characters", () => {
@@ -120,7 +128,7 @@ describe("validateRedirectUrl", () => {
 
     it("should handle mixed case protocols", () => {
       expect(() => validateRedirectUrl("JaVaScRiPt:alert('XSS')")).toThrow(
-        "Authorization URL must be HTTP or HTTPS"
+        "Authorization URL must be HTTP or HTTPS",
       );
     });
   });

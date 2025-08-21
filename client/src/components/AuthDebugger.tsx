@@ -171,7 +171,8 @@ const AuthDebugger = ({
             updateAuthState({
               ...currentState,
               isInitiatingAuth: false,
-              latestError: error instanceof Error ? error : new Error(String(error)),
+              latestError:
+                error instanceof Error ? error : new Error(String(error)),
               statusMessage: {
                 type: "error",
                 message: `Invalid authorization URL: ${error instanceof Error ? error.message : String(error)}`,
@@ -179,7 +180,7 @@ const AuthDebugger = ({
             });
             return;
           }
-          
+
           // Store the current auth state before redirecting
           sessionStorage.setItem(
             SESSION_KEYS.AUTH_DEBUGGER_STATE,
