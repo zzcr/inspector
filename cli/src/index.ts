@@ -19,6 +19,7 @@ import {
 } from "./client/index.js";
 import { handleError } from "./error-handler.js";
 import { createTransport, TransportOptions } from "./transport.js";
+import { awaitableLog } from "./utils/awaitable-log.js";
 
 type Args = {
   target: string[];
@@ -150,7 +151,7 @@ async function callMethod(args: Args): Promise<void> {
       );
     }
 
-    console.log(JSON.stringify(result, null, 2));
+    await awaitableLog(JSON.stringify(result, null, 2));
   } finally {
     try {
       await disconnect(transport);
