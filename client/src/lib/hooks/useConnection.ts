@@ -36,12 +36,16 @@ import { useEffect, useState } from "react";
 import { useToast } from "@/lib/hooks/useToast";
 import { z } from "zod";
 import { ConnectionStatus } from "../constants";
-import { Notification, StdErrNotificationSchema } from "../notificationTypes";
-import { auth } from "@modelcontextprotocol/sdk/client/auth.js";
+import { Notification } from "../notificationTypes";
+import {
+  auth,
+  discoverOAuthProtectedResourceMetadata,
+} from "@modelcontextprotocol/sdk/client/auth.js";
 import {
   clearClientInformationFromSessionStorage,
   InspectorOAuthClientProvider,
   saveClientInformationToSessionStorage,
+  discoverScopes,
 } from "../auth";
 import packageJson from "../../../package.json";
 import {
@@ -88,7 +92,6 @@ export function useConnection({
   oauthScope,
   config,
   onNotification,
-  onStdErrNotification,
   onPendingRequest,
   onElicitationRequest,
   getRoots,
@@ -315,11 +318,27 @@ export function useConnection({
 
   const handleAuthError = async (error: unknown) => {
     if (is401Error(error)) {
-      const serverAuthProvider = new InspectorOAuthClientProvider(sseUrl);
+      let scope = oauthScope?.trim();
+      if (!scope) {
+        // Only discover resource metadata when we need to discover scopes
+        let resourceMetadata;
+        try {
+          resourceMetadata = await discoverOAuthProtectedResourceMetadata(
+            new URL("/", sseUrl),
+          );
+        } catch {
+          // Resource metadata is optional, continue without it
+        }
+        scope = await discoverScopes(sseUrl, resourceMetadata);
+      }
+      const serverAuthProvider = new InspectorOAuthClientProvider(
+        sseUrl,
+        scope,
+      );
 
       const result = await auth(serverAuthProvider, {
         serverUrl: sseUrl,
-        scope: oauthScope,
+        scope,
       });
       return result === "AUTHORIZED";
     }
@@ -390,11 +409,20 @@ export function useConnection({
 
       let mcpProxyServerUrl;
       switch (transportType) {
-        case "stdio":
+        case "stdio": {
           mcpProxyServerUrl = new URL(`${getMCPProxyAddress(config)}/stdio`);
           mcpProxyServerUrl.searchParams.append("command", command);
           mcpProxyServerUrl.searchParams.append("args", args);
           mcpProxyServerUrl.searchParams.append("env", JSON.stringify(env));
+
+          const proxyFullAddress = config.MCP_PROXY_FULL_ADDRESS
+            .value as string;
+          if (proxyFullAddress) {
+            mcpProxyServerUrl.searchParams.append(
+              "proxyFullAddress",
+              proxyFullAddress,
+            );
+          }
           transportOptions = {
             authProvider: serverAuthProvider,
             eventSourceInit: {
@@ -412,10 +440,20 @@ export function useConnection({
             },
           };
           break;
+        }
 
-        case "sse":
+        case "sse": {
           mcpProxyServerUrl = new URL(`${getMCPProxyAddress(config)}/sse`);
           mcpProxyServerUrl.searchParams.append("url", sseUrl);
+
+          const proxyFullAddressSSE = config.MCP_PROXY_FULL_ADDRESS
+            .value as string;
+          if (proxyFullAddressSSE) {
+            mcpProxyServerUrl.searchParams.append(
+              "proxyFullAddress",
+              proxyFullAddressSSE,
+            );
+          }
           transportOptions = {
             eventSourceInit: {
               fetch: (
@@ -432,6 +470,7 @@ export function useConnection({
             },
           };
           break;
+        }
 
         case "streamable-http":
           mcpProxyServerUrl = new URL(`${getMCPProxyAddress(config)}/mcp`);
@@ -483,13 +522,6 @@ export function useConnection({
           onNotification(notification);
           return Promise.resolve();
         };
-      }
-
-      if (onStdErrNotification) {
-        client.setNotificationHandler(
-          StdErrNotificationSchema,
-          onStdErrNotification,
-        );
       }
 
       let capabilities;

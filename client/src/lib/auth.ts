@@ -6,9 +6,45 @@ import {
   OAuthTokensSchema,
   OAuthClientMetadata,
   OAuthMetadata,
+  OAuthProtectedResourceMetadata,
 } from "@modelcontextprotocol/sdk/shared/auth.js";
+import { discoverAuthorizationServerMetadata } from "@modelcontextprotocol/sdk/client/auth.js";
 import { SESSION_KEYS, getServerSpecificKey } from "./constants";
 import { generateOAuthState } from "@/utils/oauthUtils";
+import { validateRedirectUrl } from "@/utils/urlValidation";
+
+/**
+ * Discovers OAuth scopes from server metadata, with preference for resource metadata scopes
+ * @param serverUrl - The MCP server URL
+ * @param resourceMetadata - Optional resource metadata containing preferred scopes
+ * @returns Promise resolving to space-separated scope string or undefined
+ */
+export const discoverScopes = async (
+  serverUrl: string,
+  resourceMetadata?: OAuthProtectedResourceMetadata,
+): Promise<string | undefined> => {
+  try {
+    const metadata = await discoverAuthorizationServerMetadata(
+      new URL("/", serverUrl),
+    );
+
+    // Prefer resource metadata scopes, but fall back to OAuth metadata if empty
+    const resourceScopes = resourceMetadata?.scopes_supported;
+    const oauthScopes = metadata?.scopes_supported;
+
+    const scopesSupported =
+      resourceScopes && resourceScopes.length > 0
+        ? resourceScopes
+        : oauthScopes;
+
+    return scopesSupported && scopesSupported.length > 0
+      ? scopesSupported.join(" ")
+      : undefined;
+  } catch (error) {
+    console.debug("OAuth scope discovery failed:", error);
+    return undefined;
+  }
+};
 
 export const getClientInformationFromSessionStorage = async ({
   serverUrl,
@@ -67,10 +103,15 @@ export const clearClientInformationFromSessionStorage = ({
 };
 
 export class InspectorOAuthClientProvider implements OAuthClientProvider {
-  constructor(protected serverUrl: string) {
+  constructor(
+    protected serverUrl: string,
+    scope?: string,
+  ) {
+    this.scope = scope;
     // Save the server URL to session storage
     sessionStorage.setItem(SESSION_KEYS.SERVER_URL, serverUrl);
   }
+  scope: string | undefined;
 
   get redirectUrl() {
     return window.location.origin + "/oauth/callback";
@@ -84,6 +125,7 @@ export class InspectorOAuthClientProvider implements OAuthClientProvider {
       response_types: ["code"],
       client_name: "MCP Inspector",
       client_uri: "https://github.com/modelcontextprotocol/inspector",
+      scope: this.scope ?? "",
     };
   }
 
@@ -110,10 +152,17 @@ export class InspectorOAuthClientProvider implements OAuthClientProvider {
   }
 
   saveClientInformation(clientInformation: OAuthClientInformation) {
+    // Remove client_secret before storing (not needed after initial OAuth flow)
+    const safeInfo = Object.fromEntries(
+      Object.entries(clientInformation).filter(
+        ([key]) => key !== "client_secret",
+      ),
+    ) as OAuthClientInformation;
+
     // Save the dynamically registered client information to session storage
     saveClientInformationToSessionStorage({
       serverUrl: this.serverUrl,
-      clientInformation,
+      clientInformation: safeInfo,
       isPreregistered: false,
     });
   }
@@ -134,12 +183,8 @@ export class InspectorOAuthClientProvider implements OAuthClientProvider {
   }
 
   redirectToAuthorization(authorizationUrl: URL) {
-    if (
-      authorizationUrl.protocol !== "http:" &&
-      authorizationUrl.protocol !== "https:"
-    ) {
-      throw new Error("Authorization URL must be HTTP or HTTPS");
-    }
+    // Validate the URL using the shared utility
+    validateRedirectUrl(authorizationUrl.href);
     window.location.href = authorizationUrl.href;
   }
 
