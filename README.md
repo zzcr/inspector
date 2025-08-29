@@ -395,6 +395,9 @@ npx @modelcontextprotocol/inspector --cli node build/index.js --method tools/lis
 # Call a specific tool
 npx @modelcontextprotocol/inspector --cli node build/index.js --method tools/call --tool-name mytool --tool-arg key=value --tool-arg another=value2
 
+# Call a tool with JSON arguments
+npx @modelcontextprotocol/inspector --cli node build/index.js --method tools/call --tool-name mytool --tool-arg 'options={"format": "json", "max_tokens": 100}'
+
 # List available resources
 npx @modelcontextprotocol/inspector --cli node build/index.js --method resources/list
 
