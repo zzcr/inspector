@@ -43,8 +43,8 @@ describe("generateDefaultValue", () => {
     expect(generateDefaultValue({ type: "array" })).toBe(undefined);
   });
 
-  test("generates default empty object", () => {
-    expect(generateDefaultValue({ type: "object" })).toEqual({});
+  test("generates undefined for optional object", () => {
+    expect(generateDefaultValue({ type: "object" })).toBe(undefined);
   });
 
   test("generates default null for unknown types", () => {
@@ -66,8 +66,18 @@ describe("generateDefaultValue", () => {
     ).toBe(undefined);
   });
 
-  test("generates empty object for non-required object", () => {
-    expect(generateDefaultValue({ type: "object" })).toEqual({});
+  test("generates empty object for required object", () => {
+    const parentSchema = { required: ["testObject"] };
+    expect(
+      generateDefaultValue({ type: "object" }, "testObject", parentSchema),
+    ).toEqual({});
+  });
+
+  test("generates undefined for non-required object", () => {
+    const parentSchema = { required: ["otherField"] };
+    expect(
+      generateDefaultValue({ type: "object" }, "testObject", parentSchema),
+    ).toBe(undefined);
   });
 
   test("generates undefined for non-required primitive types", () => {

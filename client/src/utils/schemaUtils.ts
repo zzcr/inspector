@@ -111,7 +111,7 @@ export function generateDefaultValue(
     case "array":
       return isRequired ? [] : undefined;
     case "object": {
-      if (!schema.properties) return {};
+      if (!schema.properties) return isRequired ? {} : undefined;
 
       const obj: JsonObject = {};
       // Only include properties that are required according to the schema's required array
@@ -123,7 +123,7 @@ export function generateDefaultValue(
           }
         }
       });
-      return obj;
+      return isRequired ? obj : Object.keys(obj).length > 0 ? obj : undefined;
     }
     case "null":
       return null;
