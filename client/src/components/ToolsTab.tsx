@@ -7,7 +7,11 @@ import { TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import DynamicJsonForm from "./DynamicJsonForm";
 import type { JsonValue, JsonSchemaType } from "@/utils/jsonUtils";
-import { generateDefaultValue, isPropertyRequired } from "@/utils/schemaUtils";
+import {
+  generateDefaultValue,
+  isPropertyRequired,
+  normalizeUnionType,
+} from "@/utils/schemaUtils";
 import {
   CompatibilityCallToolResult,
   ListToolsResult,
@@ -115,7 +119,7 @@ const ToolsTab = ({
                 </p>
                 {Object.entries(selectedTool.inputSchema.properties ?? []).map(
                   ([key, value]) => {
-                    const prop = value as JsonSchemaType;
+                    const prop = normalizeUnionType(value as JsonSchemaType);
                     const inputSchema =
                       selectedTool.inputSchema as JsonSchemaType;
                     const required = isPropertyRequired(key, inputSchema);
@@ -159,7 +163,10 @@ const ToolsTab = ({
                             onChange={(e) =>
                               setParams({
                                 ...params,
-                                [key]: e.target.value,
+                                [key]:
+                                  e.target.value === ""
+                                    ? undefined
+                                    : e.target.value,
                               })
                             }
                             className="mt-1"
