@@ -1,4 +1,4 @@
-import { useState, memo, useMemo, useCallback, useEffect } from "react";
+import { useState, memo, useMemo, useCallback } from "react";
 import type { JsonValue } from "@/utils/jsonUtils";
 import clsx from "clsx";
 import { Copy, CheckCheck } from "lucide-react";
