@@ -336,7 +336,7 @@ const ToolsTab = ({
                       } catch (error) {
                         toast({
                           title: "Error",
-                          description: `There was an error coping result into the clipboard: ${error instanceof Error ? error.message : String(error)}`,
+                          description: `There was an error copying input to the clipboard: ${error instanceof Error ? error.message : String(error)}`,
                           variant: "destructive",
                         });
                       }
