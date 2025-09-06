@@ -93,6 +93,31 @@ const getHttpHeaders = (req: express.Request): Record<string, string> => {
   return headers;
 };
 
+/**
+ * Updates a headers object in-place, preserving the original Accept header.
+ * This is necessary to ensure that transports holding a reference to the headers
+ * object see the updates.
+ * @param currentHeaders The headers object to update.
+ * @param newHeaders The new headers to apply.
+ */
+const updateHeadersInPlace = (
+  currentHeaders: Record<string, string>,
+  newHeaders: Record<string, string>,
+) => {
+  // Preserve the Accept header, which is set at transport creation and
+  // is not present in subsequent client requests.
+  const accept = currentHeaders["Accept"];
+
+  // Clear the old headers and apply the new ones.
+  Object.keys(currentHeaders).forEach((key) => delete currentHeaders[key]);
+  Object.assign(currentHeaders, newHeaders);
+
+  // Restore the Accept header.
+  if (accept) {
+    currentHeaders["Accept"] = accept;
+  }
+};
+
 const app = express();
 app.use(cors());
 app.use((req, res, next) => {
@@ -292,7 +317,10 @@ app.get(
 
     const headerHolder = sessionHeaderHolders.get(sessionId);
     if (headerHolder) {
-      headerHolder.headers = getHttpHeaders(req);
+      updateHeadersInPlace(
+        headerHolder.headers as Record<string, string>,
+        getHttpHeaders(req),
+      );
     }
 
     try {
@@ -323,7 +351,10 @@ app.post(
       console.log(`Received POST message for sessionId ${sessionId}`);
       const headerHolder = sessionHeaderHolders.get(sessionId);
       if (headerHolder) {
-        headerHolder.headers = getHttpHeaders(req);
+        updateHeadersInPlace(
+          headerHolder.headers as Record<string, string>,
+          getHttpHeaders(req),
+        );
       }
 
       try {
@@ -598,7 +629,10 @@ app.post(
 
       const headerHolder = sessionHeaderHolders.get(sessionId);
       if (headerHolder) {
-        headerHolder.headers = getHttpHeaders(req);
+        updateHeadersInPlace(
+          headerHolder.headers as Record<string, string>,
+          getHttpHeaders(req),
+        );
       }
 
       const transport = webAppTransports.get(sessionId) as SSEServerTransport;
