@@ -90,7 +90,7 @@ const CustomHeaders = ({
       onChange(newHeaders);
       setJsonError(null);
       setIsJsonMode(false);
-    } catch (error) {
+    } catch {
       setJsonError("Invalid JSON format");
     }
   };
