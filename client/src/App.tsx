@@ -137,7 +137,11 @@ const App = () => {
     if (savedHeaders) {
       try {
         return JSON.parse(savedHeaders);
-      } catch {
+      } catch (error) {
+        console.warn(
+          `Failed to parse custom headers: "${savedHeaders}", will try legacy migration`,
+          error,
+        );
         // Fall back to migration if JSON parsing fails
       }
     }

@@ -153,6 +153,7 @@ const CustomHeaders = ({
             size="sm"
             onClick={addHeader}
             className="text-xs px-2"
+            data-testid="add-header-button"
           >
             <Plus className="w-3 h-3 mr-1" />
             Add
@@ -185,6 +186,7 @@ const CustomHeaders = ({
                   value={header.name}
                   onChange={(e) => updateHeader(index, "name", e.target.value)}
                   className="font-mono text-xs"
+                  data-testid={`header-name-input-${index}`}
                 />
                 <div className="relative">
                   <Input
@@ -195,6 +197,7 @@ const CustomHeaders = ({
                     }
                     type={visibleValues.has(index) ? "text" : "password"}
                     className="font-mono text-xs pr-8"
+                    data-testid={`header-value-input-${index}`}
                   />
                   <Button
                     type="button"
