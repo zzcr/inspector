@@ -599,6 +599,15 @@ export function useConnection({
       if (capabilities?.logging && defaultLoggingLevel) {
         lastRequest = "logging/setLevel";
         await client.setLoggingLevel(defaultLoggingLevel);
+        pushHistory(
+          {
+            method: "logging/setLevel",
+            params: {
+              level: defaultLoggingLevel,
+            },
+          },
+          {},
+        );
         lastRequest = "";
       }
 
@@ -644,11 +653,16 @@ export function useConnection({
     setServerCapabilities(null);
   };
 
+  const clearRequestHistory = () => {
+    setRequestHistory([]);
+  };
+
   return {
     connectionStatus,
     serverCapabilities,
     mcpClient,
     requestHistory,
+    clearRequestHistory,
     makeRequest,
     sendNotification,
     handleCompletion,
