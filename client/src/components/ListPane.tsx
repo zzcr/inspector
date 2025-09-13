@@ -32,7 +32,13 @@ const ListPane = <T extends object>({
     if (!searchQuery.trim()) return items;
 
     return items.filter((item) => {
-      const searchableText = JSON.stringify(item).toLowerCase();
+      console.log('item : ', item);
+      const searchableText = [
+        (item as { name?: string }).name || "",
+        (item as { description?: string }).description || "",
+      ]
+        .join(" ")
+        .toLowerCase();
       return searchableText.includes(searchQuery.toLowerCase());
     });
   }, [items, searchQuery]);
@@ -53,43 +59,37 @@ const ListPane = <T extends object>({
   return (
     <div className="bg-card border border-border rounded-lg shadow">
       <div className="p-4 border-b border-gray-200 dark:border-border">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold dark:text-white">{title}</h3>
-          <div className="relative flex items-center">
-            <button
-              name="search"
-              aria-label="Search"
-              onClick={handleSearchClick}
-              className={`p-2 hover:bg-gray-100 dark:hover:bg-secondary rounded-md transition-all duration-300 ease-in-out ${
-                isSearchExpanded
-                  ? "opacity-0 scale-75 pointer-events-none"
-                  : "opacity-100 scale-100"
-              }`}
-            >
-              <Search className="w-4 h-4 text-muted-foreground" />
-            </button>
-
-            <div
-              className={`absolute right-0 transition-all duration-300 ease-in-out ${
-                isSearchExpanded
-                  ? "opacity-100 translate-x-0 w-96"
-                  : "opacity-0 translate-x-4 w-0"
-              }`}
-            >
-              <div className="flex items-center">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
-                <Input
-                  ref={searchInputRef}
-                  name="search"
-                  type="text"
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onBlur={handleSearchBlur}
-                  className="pl-10 w-full transition-all duration-300 ease-in-out"
-                />
+        <div className="flex items-center justify-between gap-4">
+          <h3 className="font-semibold dark:text-white flex-shrink-0">
+            {title}
+          </h3>
+          <div className="flex items-center justify-end min-w-0 flex-1">
+            {!isSearchExpanded ? (
+              <button
+                name="search"
+                aria-label="Search"
+                onClick={handleSearchClick}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-secondary rounded-md transition-all duration-300 ease-in-out"
+              >
+                <Search className="w-4 h-4 text-muted-foreground" />
+              </button>
+            ) : (
+              <div className="flex items-center w-full max-w-xs">
+                <div className="relative w-full">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+                  <Input
+                    ref={searchInputRef}
+                    name="search"
+                    type="text"
+                    placeholder="Search..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onBlur={handleSearchBlur}
+                    className="pl-10 w-full transition-all duration-300 ease-in-out"
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
