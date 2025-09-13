@@ -32,7 +32,6 @@ const ListPane = <T extends object>({
     if (!searchQuery.trim()) return items;
 
     return items.filter((item) => {
-      console.log('item : ', item);
       const searchableText = [
         (item as { name?: string }).name || "",
         (item as { description?: string }).description || "",
