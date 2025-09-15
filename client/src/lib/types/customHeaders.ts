@@ -58,9 +58,7 @@ export const migrateFromLegacyAuth = (
   bearerToken?: string,
   headerName?: string,
 ): CustomHeaders => {
-  if (!bearerToken) {
-    return [];
-  }
-
-  return [createHeaderFromBearerToken(bearerToken, headerName)];
+  return bearerToken
+    ? [createHeaderFromBearerToken(bearerToken, headerName)]
+    : [];
 };

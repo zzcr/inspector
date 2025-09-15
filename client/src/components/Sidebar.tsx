@@ -53,12 +53,7 @@ interface SidebarProps {
   setSseUrl: (url: string) => void;
   env: Record<string, string>;
   setEnv: (env: Record<string, string>) => void;
-  // Legacy auth props (for backward compatibility)
-  bearerToken: string;
-  setBearerToken: (token: string) => void;
-  headerName?: string;
-  setHeaderName?: (name: string) => void;
-  // New custom headers support
+  // Custom headers support
   customHeaders: CustomHeadersType;
   setCustomHeaders: (headers: CustomHeadersType) => void;
   oauthClientId: string;
@@ -86,10 +81,6 @@ const Sidebar = ({
   setSseUrl,
   env,
   setEnv,
-  bearerToken: _bearerToken,
-  setBearerToken: _setBearerToken,
-  headerName: _headerName,
-  setHeaderName: _setHeaderName,
   customHeaders,
   setCustomHeaders,
   oauthClientId,

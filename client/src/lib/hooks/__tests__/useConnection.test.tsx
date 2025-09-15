@@ -649,9 +649,17 @@ describe("useConnection", () => {
     });
 
     test("preserves server Authorization header when proxy auth is configured", async () => {
+      const customHeaders: CustomHeaders = [
+        {
+          name: "Authorization",
+          value: "Bearer server-auth-token",
+          enabled: true,
+        },
+      ];
+
       const propsWithBothAuth = {
         ...defaultProps,
-        bearerToken: "server-auth-token",
+        customHeaders,
         config: {
           ...DEFAULT_INSPECTOR_CONFIG,
           MCP_PROXY_AUTH_TOKEN: {
@@ -811,14 +819,18 @@ describe("useConnection", () => {
       expect(headers).not.toHaveProperty("X-Disabled");
     });
 
-    test("migrates from legacy bearerToken and headerName", async () => {
-      const propsWithLegacyAuth = {
+    test("handles migrated legacy auth via custom headers", async () => {
+      // Simulate what App.tsx would do - migrate legacy auth to custom headers
+      const customHeaders: CustomHeaders = [
+        { name: "X-Custom-Auth", value: "legacy-token", enabled: true },
+      ];
+
+      const propsWithMigratedAuth = {
         ...defaultProps,
-        bearerToken: "legacy-token",
-        headerName: "X-Custom-Auth",
+        customHeaders,
       };
 
-      const { result } = renderHook(() => useConnection(propsWithLegacyAuth));
+      const { result } = renderHook(() => useConnection(propsWithMigratedAuth));
 
       await act(async () => {
         await result.current.connect();

@@ -1,10 +1,4 @@
-import {
-  render,
-  screen,
-  fireEvent,
-  act,
-  waitFor,
-} from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { describe, it, beforeEach, jest } from "@jest/globals";
 import Sidebar from "../Sidebar";
@@ -54,10 +48,6 @@ describe("Sidebar", () => {
     setOauthScope: jest.fn(),
     env: {},
     setEnv: jest.fn(),
-    bearerToken: "",
-    setBearerToken: jest.fn(),
-    headerName: "",
-    setHeaderName: jest.fn(),
     customHeaders: [],
     setCustomHeaders: jest.fn(),
     onConnect: jest.fn(),

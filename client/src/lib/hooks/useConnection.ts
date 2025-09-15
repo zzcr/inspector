@@ -57,7 +57,7 @@ import {
 import { getMCPServerRequestTimeout } from "@/utils/configUtils";
 import { InspectorConfig } from "../configurationTypes";
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
-import { CustomHeaders, migrateFromLegacyAuth } from "../types/customHeaders";
+import { CustomHeaders } from "../types/customHeaders";
 
 interface UseConnectionOptions {
   transportType: "stdio" | "sse" | "streamable-http";
@@ -65,10 +65,7 @@ interface UseConnectionOptions {
   args: string;
   sseUrl: string;
   env: Record<string, string>;
-  // Legacy auth support (for backward compatibility)
-  bearerToken?: string;
-  headerName?: string;
-  // New custom headers support
+  // Custom headers support
   customHeaders?: CustomHeaders;
   oauthClientId?: string;
   oauthScope?: string;
@@ -90,8 +87,6 @@ export function useConnection({
   args,
   sseUrl,
   env,
-  bearerToken,
-  headerName,
   customHeaders,
   oauthClientId,
   oauthScope,
@@ -384,16 +379,8 @@ export function useConnection({
       // Create an auth provider with the current server URL
       const serverAuthProvider = new InspectorOAuthClientProvider(sseUrl);
 
-      // Handle custom headers (new approach) or legacy auth (backward compatibility)
-      let finalHeaders: CustomHeaders = [];
-
-      if (customHeaders && customHeaders.length > 0) {
-        // Use new custom headers approach
-        finalHeaders = customHeaders;
-      } else if (bearerToken || headerName) {
-        // Migrate from legacy auth approach
-        finalHeaders = migrateFromLegacyAuth(bearerToken, headerName);
-      }
+      // Use custom headers (migration is handled in App.tsx)
+      let finalHeaders: CustomHeaders = customHeaders || [];
 
       // Add OAuth token if available and no custom headers are set
       if (finalHeaders.length === 0) {

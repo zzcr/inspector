@@ -154,7 +154,14 @@ const App = () => {
       return migrateFromLegacyAuth(legacyToken, legacyHeaderName);
     }
 
-    return [];
+    // Default to Authorization: Bearer as the most common case
+    return [
+      {
+        name: "Authorization",
+        value: "Bearer ",
+        enabled: true,
+      },
+    ];
   });
 
   const [pendingSampleRequests, setPendingSampleRequests] = useState<
@@ -243,8 +250,6 @@ const App = () => {
     args,
     sseUrl,
     env,
-    bearerToken,
-    headerName,
     customHeaders,
     oauthClientId,
     oauthScope,
@@ -334,11 +339,19 @@ const App = () => {
   }, [transportType]);
 
   useEffect(() => {
-    localStorage.setItem("lastBearerToken", bearerToken);
+    if (bearerToken) {
+      localStorage.setItem("lastBearerToken", bearerToken);
+    } else {
+      localStorage.removeItem("lastBearerToken");
+    }
   }, [bearerToken]);
 
   useEffect(() => {
-    localStorage.setItem("lastHeaderName", headerName);
+    if (headerName) {
+      localStorage.setItem("lastHeaderName", headerName);
+    } else {
+      localStorage.removeItem("lastHeaderName");
+    }
   }, [headerName]);
 
   useEffect(() => {
@@ -858,10 +871,6 @@ const App = () => {
           setEnv={setEnv}
           config={config}
           setConfig={setConfig}
-          bearerToken={bearerToken}
-          setBearerToken={setBearerToken}
-          headerName={headerName}
-          setHeaderName={setHeaderName}
           customHeaders={customHeaders}
           setCustomHeaders={setCustomHeaders}
           oauthClientId={oauthClientId}
