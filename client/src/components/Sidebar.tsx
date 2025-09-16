@@ -67,6 +67,8 @@ interface SidebarProps {
   loggingSupported: boolean;
   config: InspectorConfig;
   setConfig: (config: InspectorConfig) => void;
+  connectionType: "direct" | "proxy";
+  setConnectionType: (type: "direct" | "proxy") => void;
 }
 
 const Sidebar = ({
@@ -94,6 +96,8 @@ const Sidebar = ({
   loggingSupported,
   config,
   setConfig,
+  connectionType,
+  setConnectionType,
 }: SidebarProps) => {
   const [theme, setTheme] = useTheme();
   const [showEnvVars, setShowEnvVars] = useState(false);
@@ -312,6 +316,30 @@ const Sidebar = ({
                     className="font-mono"
                   />
                 )}
+              </div>
+
+              {/* Connection Type switch - only visible for non-STDIO transport types */}
+              <div className="space-y-2">
+                <label
+                  className="text-sm font-medium"
+                  htmlFor="connection-type-select"
+                >
+                  Connection Type
+                </label>
+                <Select
+                  value={connectionType}
+                  onValueChange={(value: "direct" | "proxy") =>
+                    setConnectionType(value)
+                  }
+                >
+                  <SelectTrigger id="connection-type-select">
+                    <SelectValue placeholder="Select connection type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="proxy">Via Proxy</SelectItem>
+                    <SelectItem value="direct">Direct</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </>
           )}
