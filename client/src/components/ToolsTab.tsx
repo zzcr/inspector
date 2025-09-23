@@ -66,9 +66,19 @@ const ToolsTab = ({
   const [isToolRunning, setIsToolRunning] = useState(false);
   const [isOutputSchemaExpanded, setIsOutputSchemaExpanded] = useState(false);
   const [isMetaExpanded, setIsMetaExpanded] = useState(false);
+  const [hasValidationErrors, setHasValidationErrors] = useState(false);
   const formRefs = useRef<Record<string, DynamicJsonFormRef | null>>({});
   const { toast } = useToast();
   const { copied, setCopied } = useCopy();
+
+  // Function to check if any form has validation errors
+  const checkValidationErrors = () => {
+    const errors = Object.values(formRefs.current).some(
+      (ref) => ref && !ref.validateJson().isValid,
+    );
+    setHasValidationErrors(errors);
+    return errors;
+  };
 
   useEffect(() => {
     const params = Object.entries(
@@ -82,6 +92,12 @@ const ToolsTab = ({
       ),
     ]);
     setParams(Object.fromEntries(params));
+
+    // Reset validation errors when switching tools
+    setHasValidationErrors(false);
+
+    // Clear form refs for the previous tool
+    formRefs.current = {};
   }, [selectedTool]);
 
   return (
@@ -199,6 +215,8 @@ const ToolsTab = ({
                                   ...params,
                                   [key]: newValue,
                                 });
+                                // Check validation after a short delay to allow form to update
+                                setTimeout(checkValidationErrors, 100);
                               }}
                             />
                           </div>
@@ -235,6 +253,8 @@ const ToolsTab = ({
                                   ...params,
                                   [key]: newValue,
                                 });
+                                // Check validation after a short delay to allow form to update
+                                setTimeout(checkValidationErrors, 100);
                               }}
                             />
                           </div>
@@ -317,10 +337,7 @@ const ToolsTab = ({
                   <Button
                     onClick={async () => {
                       // Validate JSON inputs before calling tool
-                      const hasValidationErrors = Object.values(
-                        formRefs.current,
-                      ).some((ref) => ref && !ref.validateJson().isValid);
-                      if (hasValidationErrors) return;
+                      if (checkValidationErrors()) return;
 
                       try {
                         setIsToolRunning(true);
@@ -329,7 +346,7 @@ const ToolsTab = ({
                         setIsToolRunning(false);
                       }
                     }}
-                    disabled={isToolRunning}
+                    disabled={isToolRunning || hasValidationErrors}
                   >
                     {isToolRunning ? (
                       <>

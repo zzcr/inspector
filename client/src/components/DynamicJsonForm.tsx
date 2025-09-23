@@ -106,8 +106,17 @@ const DynamicJsonForm = forwardRef<DynamicJsonFormRef, DynamicJsonFormProps>(
             const parsed = JSON.parse(jsonString);
             onChange(parsed);
             setJsonError(undefined);
-          } catch {
-            // Don't set error during normal typing
+          } catch (err) {
+            // For invalid JSON, set error and reset to default if it's clearly malformed
+            const errorMessage =
+              err instanceof Error ? err.message : "Invalid JSON";
+            setJsonError(errorMessage);
+
+            // Reset to default for clearly invalid JSON (not just incomplete typing)
+            const trimmed = jsonString.trim();
+            if (trimmed.length > 5 && !trimmed.match(/^[\s\[{]/)) {
+              onChange(generateDefaultValue(schema));
+            }
           }
         }, 300);
       },
@@ -164,7 +173,12 @@ const DynamicJsonForm = forwardRef<DynamicJsonFormRef, DynamicJsonFormProps>(
       try {
         const jsonStr = rawJsonValue.trim();
         if (!jsonStr) return { isValid: true, error: null };
-        JSON.parse(jsonStr);
+        const parsed = JSON.parse(jsonStr);
+        // Clear any pending debounced update and immediately update parent
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+        onChange(parsed);
         setJsonError(undefined);
         return { isValid: true, error: null };
       } catch (err) {
