@@ -26,12 +26,22 @@ export interface DynamicJsonFormRef {
   validateJson: () => { isValid: boolean; error: string | null };
 }
 
+const isTypeSupported = (
+  type: JsonSchemaType["type"],
+  supportedTypes: string[],
+): boolean => {
+  if (Array.isArray(type)) {
+    return type.every((t) => supportedTypes.includes(t));
+  }
+  return typeof type === "string" && supportedTypes.includes(type);
+};
+
 const isSimpleObject = (schema: JsonSchemaType): boolean => {
   const supportedTypes = ["string", "number", "integer", "boolean", "null"];
-  if (schema.type && supportedTypes.includes(schema.type)) return true;
+  if (schema.type && isTypeSupported(schema.type, supportedTypes)) return true;
   if (schema.type === "object") {
     return Object.values(schema.properties ?? {}).every(
-      (prop) => prop.type && supportedTypes.includes(prop.type),
+      (prop) => prop.type && isTypeSupported(prop.type, supportedTypes),
     );
   }
   if (schema.type === "array") {
@@ -235,7 +245,13 @@ const DynamicJsonForm = forwardRef<DynamicJsonFormRef, DynamicJsonFormProps>(
       const isRequired =
         parentSchema?.required?.includes(propertyName || "") ?? false;
 
-      switch (propSchema.type) {
+      let fieldType = propSchema.type;
+      if (Array.isArray(fieldType)) {
+        // Of the possible types, find the first non-null type to determine the control to render
+        fieldType = fieldType.find((t) => t !== "null") ?? fieldType[0];
+      }
+
+      switch (fieldType) {
         case "string": {
           if (
             propSchema.oneOf &&
@@ -391,6 +407,8 @@ const DynamicJsonForm = forwardRef<DynamicJsonFormRef, DynamicJsonFormProps>(
               required={isRequired}
             />
           );
+        case "null":
+          return null;
         case "object":
           if (!propSchema.properties) {
             return (
