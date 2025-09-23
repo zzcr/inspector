@@ -114,13 +114,13 @@ const DynamicJsonForm = forwardRef<DynamicJsonFormRef, DynamicJsonFormProps>(
 
             // Reset to default for clearly invalid JSON (not just incomplete typing)
             const trimmed = jsonString.trim();
-            if (trimmed.length > 5 && !trimmed.match(/^[\s\[{]/)) {
+            if (trimmed.length > 5 && !trimmed.match(/^[\s[{]/)) {
               onChange(generateDefaultValue(schema));
             }
           }
         }, 300);
       },
-      [onChange, setJsonError],
+      [onChange, setJsonError, schema],
     );
 
     // Update rawJsonValue when value prop changes
