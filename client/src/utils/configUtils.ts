@@ -24,7 +24,7 @@ export const getMCPProxyAddress = (config: InspectorConfig): string => {
   const proxyPort =
     getSearchParam("MCP_PROXY_PORT") || DEFAULT_MCP_PROXY_LISTEN_PORT;
 
-  return `${window.location.protocol}//${window.location.hostname}:${proxyPort}`;
+  return window.isProduction ?`${window.location.protocol}//${window.location.hostname}/inspector-server`:`${window.location.protocol}//${window.location.hostname}:${proxyPort}`;
 };
 
 export const getMCPServerRequestTimeout = (config: InspectorConfig): number => {
