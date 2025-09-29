@@ -104,6 +104,7 @@ const App = () => {
   const [args, setArgs] = useState<string>(getInitialArgs);
 
   const [sseUrl, setSseUrl] = useState<string>(getInitialSseUrl);
+  window.setSseUrl = setSseUrl;
   const [transportType, setTransportType] = useState<
     "stdio" | "sse" | "streamable-http"
   >(getInitialTransportType);
